@@ -1,0 +1,36 @@
+{
+    "name": "cartazfacil/integracao-bengala",
+    "description": "Integração de produtos e impressão dinâmica de cartazes",
+    "type": "project",
+    "require": {
+        "cartazfacil/integracao-vr-software": "dev-main",
+        "cartazfacil/database-integracao": "dev-main",
+        "vlucas/phpdotenv": "^4.3",
+        "nesbot/carbon": "1.*"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/Inacio-Fernando/database-integracao"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "IntegracaoBengala\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Iran"
+        }
+    ],
+    "config": {
+        "platform": {
+            "php": "7.0"
+        },
+        "platform-check": false,
+        "allow-plugins": {
+            "kylekatarnls/update-helper": true
+        }
+    }
+}

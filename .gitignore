@@ -1,0 +1,7 @@
+\.vscode
+\vendor
+\logs
+\.env
+.env
+.directory
+composer.lock
