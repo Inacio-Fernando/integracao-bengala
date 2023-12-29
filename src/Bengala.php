@@ -1,5 +1,5 @@
 <?php
-namespace IntegracaoFederzoni;
+namespace IntegracaoBengala;
 
 use Carbon\Carbon;
 use Cartazfacil\DatabaseIntegracao\General;
@@ -12,8 +12,8 @@ $dotenv->safeLoad();
 
 class Bengala extends General
 {
+    public $family = null;
     protected $fromPrint = false;
-    protected $rule = 0;
 
     function mountProduct($productData = null)
     {
@@ -22,14 +22,26 @@ class Bengala extends General
         }
 
         $product = new stdClass();
-        $product->prod_cod = substr($productData->CODIGO, 0, 50);
-        $product->prod_nome = $this->name_formatter($productData->NOME);
-        $product->prod_desc = $this->name_formatter($productData->NOME, 200);
-        $product->prod_sku = substr($productData->EANINTERNO, 0, 300);
-        $product->prod_proporcao = substr($productData->PROPORCAO, 0, 50);
-        $product->prod_sessao = substr($productData->DEPARTAMENTO, 0, 75);
-        $product->prod_grupo = substr($productData->GRUPO, 0, 75);
-        $product->prod_subgrupo = substr($productData->SUBGRUPO, 0, 75);
+        $product->prod_cod = substr($productData->id, 0, 50);
+        $product->prod_nome = $this->name_formatter($productData->descricaoCompleta);
+        $product->prod_desc = $this->name_formatter($productData->descricaoCompleta, 200);
+        $product->prod_desc_tabloide = $this->name_formatter($productData->descricaoReduzida, 200);
+        $product->prod_proporcao = substr($productData->proporcao, 0, 50);
+        $product->prod_sessao = substr($productData->mercadologico1, 0, 75);
+        $product->prod_grupo = substr($productData->mercadologico2, 0, 75);
+        $product->prod_subgrupo = substr($productData->mercadologico3, 0, 75);
+
+        //Verificar se existem dados em 'familia'
+        if (!empty((array) $productData->familia)) {
+            $product->prod_familia = substr($productData->familia->id, 0, 50);
+        }
+
+        //Verificar se existem dados em 'produtoAutomacao'
+        if (!empty($productData->produtoAutomacao)) {
+            $product->prod_sku = substr($productData->produtoAutomacao[0]->ean, 0, 300);
+            $product->prod_embalagem = substr($productData->produtoAutomacao[0]->qtdeEmbalagem, 0, 100);
+        }        
+
         $product->prod_empresa = 1;
         $product->prod_estabelecimento = 1;
 
@@ -37,6 +49,20 @@ class Bengala extends General
         $this->depto = $product->prod_sessao;
 
         return $this->product = $product;
+
+    }
+
+    function mountFamily($productData = null)
+    {
+        if (is_null($productData)) {
+            $productData = $this->request_data;
+        }
+
+        $family = new stdClass();
+        $family->fam_id = $productData->familia->id;
+        $family->fam_nomefamilia = $this->name_formatter($productData->familia->descricao);
+
+        return $this->family = $family;
 
     }
 
@@ -50,19 +76,14 @@ class Bengala extends General
             return false;
         }
 
-        //Filiais
-        $filial_switch = [1 => 5, 2 => 3, 3 => 2, 4 => 6, 5 => 4, 6 => 1];
-        $filial = (key_exists((int) $productData->NROEMPRESA, $filial_switch)) ? $filial_switch[(int) $productData->NROEMPRESA] : (int) $productData->NROEMPRESA;
-
         //Ver qual data
         $data_de = date('Y-m-d');
         $data_ate = date('Y-m-d');
 
         //Criando objeto cf_preco
         $price = new stdClass();
-        $price->vlr_produto = (int) ($this->fromPrint)? $productData->SEQPRODUTO : $productData->CODIGO;
+        $price->vlr_filial = 1;
         $price->vlr_empresa = 1;
-        $price->vlr_filial = $filial;
         $price->vlr_usuario = 1;
         $price->vlr_data_de = $data_de;
         $price->vlr_data_ate = $data_ate;
@@ -82,31 +103,12 @@ class Bengala extends General
         $productData = $this->request_data;
 
         //Formatar preço string
-        $p1 = isset($productData->PRECOREGULAR)? $this->price_formmater($productData->PRECOREGULAR) : 0;
-        $p2 = isset($productData->PRECOPROMOCIONAL)? $this->price_formmater($productData->PRECOPROMOCIONAL): 0;
-        $p3 = isset($productData->PRECOREGULARFATOR)? $this->price_formmater($productData->PRECOREGULARFATOR) : 0;
-
+        $p1 = isset($productData->produtoAutomacao[0]->precoVenda)? $this->price_formmater($productData->produtoAutomacao[0]->precoVenda) : 0;
+        
         //Atribuir dados padrão
         $this->price->vlr_valores = $p1; //preço inicial
         $this->price->vlr_idcomercial = 1; //Dinâmica
-
-        //Verificação para tipo de valor promocional, substituir
-        if (
-            isset($productData->PRECOPROMOCIONAL)
-            && $p1 != $p2
-            && $p2 > 0
-        ) {
-            $this->price->vlr_valores .= "!@#$p2"; //preço adicional
-            $this->price->vlr_idcomercial = 2; //De por
-        }
-
-        //Se houver fator, adicionar juntamente com texto
-        if (
-            isset($productData->PRECOREGULARFATOR)
-            && $p3 > 0
-        ) {
-            $this->price->vlr_valores .= "!@#Equivale em $productData->MULTEQPEMBALAGEM. - R$ $p3";
-        }
+        $this->price->vlr_produto = (int) $this->product->prod_id; //Produto
 
     }
 
@@ -116,53 +118,20 @@ class Bengala extends General
         $productData = $this->request_data;
 
         //Formatar preço string
-        $p1 = isset($productData->PRECO_BASE)? $this->price_formmater($productData->PRECO_BASE) : 0;
-        $p2 = isset($productData->PRECO_PROMOCIONAL)? $this->price_formmater($productData->PRECO_PROMOCIONAL): 0;
-        $p3 = isset($productData->PRECO_MASCOTE)? $this->price_formmater($productData->PRECO_MASCOTE) : 0;
+        
+        //Preço normal
+        $p1 = isset($productData->precoNormalOferta)? $this->price_formmater($productData->precoNormalOferta) : 0;
 
-        //Datas Validade
-        $start = new Carbon($productData->DTAINICIO, 'America/Sao_Paulo');
-        $end = new Carbon($productData->DTAFIM, 'America/Sao_Paulo');
+        //Preço Oferta
+        $p2 = isset($productData->precoOferta)? $this->price_formmater($productData->precoOferta): 0;
 
-        //Pegar dados de produto
-        $this->product = $product = $this->getProduct($productData->SEQPRODUTO, 'code');
-
-        $valor = '';
-        $dinamica = 1;
-        $regra = 0;
-
-        switch (true) {
-            case is_object($product) && $product->prod_sessao == 'FLV' 
-            && $start->dayOfWeekIso == 4 && $end->dayOfWeekIso == 5:
-                $valor = ($p2 > 0) ? $p2 : $p1;                
-                $dinamica = 1;
-                $regra = 1;
-                break;
-            case is_object($product) && $product->prod_sessao == 'FLV':
-                $valor = ($p2 > 0) ? $p2 : $p1;
-                $dinamica = 1;
-                $regra = 2;
-                break;
-            case strpos($productData->PROMOCAO, 'APP') != false:
-                $valor = ($p1 > 0) ? $p1 : $p2;
-                $dinamica = 3;
-                $regra = 4;
-                break;
-            case $p2 > 0 && $p3 > 0:
-                $valor = "$p2!@#$p3";
-                $dinamica = 7;
-                $regra = 3;
-                break;
-            default:
-                $valor = ($p2 > 0) ? $p2 : $p1;
-                $dinamica = 1;
-                $regra = 5;
-                break;
-        }
-
-        $this->price->vlr_valores = $valor; //Preço
-        $this->price->vlr_idcomercial = $dinamica; //Dinâmica
-        $this->rule = $regra; //Regras
+        //Atribuir dados 
+        $this->price->vlr_valores = "$p1!@#$p2"; //Preço
+        $this->price->vlr_idcomercial = 2; //Dinâmica
+        $this->price->vlr_produto = (int) $productData->id_produto;
+        $this->price->vlr_filial = (int) $productData->id_loja;
+        $this->price->vlr_data_de = $productData->dataInicio;
+        $this->price->vlr_data_ate = $productData->dataTermino;        
 
     }
 
@@ -175,10 +144,10 @@ class Bengala extends General
 
         //Salvar/Atualizar Cartaz
         $dailyprint = new stdClass();
-        $dailyprint->dp_fortam = (string) $productData->PROMOCAO;
-        $dailyprint->dp_estabelecimento = (int) $productData->NROEMPRESA;
-        $dailyprint->dp_nome = (string) 'CARTAZ PROMOCAO';
-        $dailyprint->dp_data = (string) (new Carbon($productData->DTAINICIO))->format('Y-m-d');
+        $dailyprint->dp_fortam = (string) 'A6 PAISAGEM';
+        $dailyprint->dp_estabelecimento = (int) 1;
+        $dailyprint->dp_nome = (string) 'Cartazes - ' . $productData->dataInicio;
+        $dailyprint->dp_data = (string) (new Carbon($productData->dataInicio))->format('Y-m-d');
 
         //Salvar/Atualizar preço
         $this->fromPrint = true;
@@ -189,39 +158,10 @@ class Bengala extends General
             return false;
         }
 
-        //Aplicar formatos baseados nas regras
-        switch ($this->rule) {
-            case 1:
-                $cartaz = 83;
-                $motivo = 339;
-                $tamanho = '297/420';
-                break;
-            case 2:
-                $cartaz = 83;
-                $motivo = 339;
-                $tamanho = '297/420';
-                break;
-            case 3:
-                $cartaz = 211;
-                $motivo = 424;
-                $tamanho = '105/148';
-                break;
-            case 4:
-                $cartaz = 66;
-                $motivo = 425;
-                $tamanho = '297/420';
-                break;
-            default:
-                $cartaz = 50;
-                $motivo = 422;
-                $tamanho = '105/148';
-                break;
-        }
-
         //Propriedades de formatos
-        $dailyprint->dp_dgcartaz = $cartaz;
-        $dailyprint->dp_dgmotivo = $motivo;
-        $dailyprint->dp_tamanho = $tamanho;
+        $dailyprint->dp_dgcartaz = 118;
+        $dailyprint->dp_dgmotivo = 113;
+        $dailyprint->dp_tamanho = '148/105';
 
         //Se não houver, adicionar req
         if (empty($prices)) {

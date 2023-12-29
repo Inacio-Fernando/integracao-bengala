@@ -3,7 +3,7 @@
     "description": "Integração de produtos e impressão dinâmica de cartazes",
     "type": "project",
     "require": {
-        "cartazfacil/integracao-vr-software": "dev-main",
+        "cartazfacil/integracao-vrsoftware": "dev-main",
         "cartazfacil/database-integracao": "dev-main",
         "vlucas/phpdotenv": "^4.3",
         "nesbot/carbon": "1.*"
@@ -12,6 +12,10 @@
         {
             "type": "vcs",
             "url": "https://github.com/Inacio-Fernando/database-integracao"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/iran-cartazfacil/vrsoftware"
         }
     ],
     "autoload": {
