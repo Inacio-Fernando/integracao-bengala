@@ -76,6 +76,42 @@ class Bengala extends General
             return false;
         }
 
+        $this->price = [];
+
+        foreach ($productData->produtoAutomacao as $p) {
+            
+            //Ver qual data
+            $data_de = date('Y-m-d');
+            $data_ate = date('Y-m-d');
+
+            //Criando objeto cf_preco
+            $price = new stdClass();
+            $price->vlr_filial = 1;
+            $price->vlr_empresa = 1;
+            $price->vlr_usuario = 1;
+            $price->vlr_data_de = $data_de;
+            $price->vlr_data_ate = $data_ate;
+            $price->vlr_hora = '03:03';           
+
+            //Função para formatação de preço e dinâmica
+            $this->priceProduct($price, $p);
+            $this->price[] = $price;
+
+        }        
+
+        return (object) $this->price;
+    }
+
+    function mountPriceOffer($offerData = null)
+    {
+        if (is_null($offerData)) {
+            $offerData = $this->request_data;
+        }
+
+        if (empty($offerData)) {
+            return false;
+        }
+
         //Ver qual data
         $data_de = date('Y-m-d');
         $data_ate = date('Y-m-d');
@@ -87,51 +123,49 @@ class Bengala extends General
         $price->vlr_usuario = 1;
         $price->vlr_data_de = $data_de;
         $price->vlr_data_ate = $data_ate;
-        $price->vlr_hora = '03:03';
+        $price->vlr_hora = '03:03';           
 
-        $this->price = $price;
+        //Função para formatação de preço e dinâmica em objeto 'oferta'
+        $this->fromPrint && $this->priceOffer($price, $offerData);
 
-        //Função para formatação de preço e dinâmica
-        ($this->fromPrint) ? $this->priceByPrint() : $this->priceByDynamic();
+        $this->price = $price;       
 
-        return $this->price;
+        return (object) $this->price;
     }
 
-    private function priceByDynamic()
+    private function priceOffer($price, $offerData)
     {
 
-        $productData = $this->request_data;
-
-        //Formatar preço string
-        $p1 = isset($productData->produtoAutomacao[0]->precoVenda)? $this->price_formmater($productData->produtoAutomacao[0]->precoVenda) : 0;
-        
-        //Atribuir dados padrão
-        $this->price->vlr_valores = $p1; //preço inicial
-        $this->price->vlr_idcomercial = 1; //Dinâmica
-        $this->price->vlr_produto = (int) $this->product->prod_id; //Produto
-
-    }
-
-    private function priceByPrint()
-    {
-
-        $productData = $this->request_data;
-
-        //Formatar preço string
-        
         //Preço normal
-        $p1 = isset($productData->precoNormalOferta)? $this->price_formmater($productData->precoNormalOferta) : 0;
+        $p1 = isset($offerData->precoNormalOferta)? $this->price_formmater($offerData->precoNormalOferta) : 0;
 
         //Preço Oferta
-        $p2 = isset($productData->precoOferta)? $this->price_formmater($productData->precoOferta): 0;
+        $p2 = isset($offerData->precoOferta)? $this->price_formmater($offerData->precoOferta): 0;
 
         //Atribuir dados 
-        $this->price->vlr_valores = "$p1!@#$p2"; //Preço
-        $this->price->vlr_idcomercial = 2; //Dinâmica
-        $this->price->vlr_produto = (int) $productData->id_produto;
-        $this->price->vlr_filial = (int) $productData->id_loja;
-        $this->price->vlr_data_de = $productData->dataInicio;
-        $this->price->vlr_data_ate = $productData->dataTermino;        
+        $price->vlr_valores = "$p1!@#$p2"; //Preço
+        $price->vlr_idcomercial = 2; //Dinâmica
+        $price->vlr_produto = (int) $offerData->id_produto;
+        $price->vlr_filial = (int) $offerData->id_loja;
+        $price->vlr_data_de = $offerData->dataInicio;
+        $price->vlr_data_ate = $offerData->dataTermino;        
+
+    }
+
+    private function priceProduct($price, $productData)
+    {
+
+        //Formatar preço string
+        $p1 = (!empty($productData->precoVenda))? $this->price_formmater($productData->precoVenda) : 0;
+
+        //Atribuir filial
+        $filial = (isset($productData->loja) && property_exists($productData->loja, 'id'))? (int) $productData->loja->id : 1;
+        
+        //Atribuir dados padrão
+        $price->vlr_valores = $p1; //preço comum
+        $price->vlr_idcomercial = 1; //Dinâmica
+        $price->vlr_produto = (int) $this->product->prod_id; //Produto
+        $price->vlr_filial = (int) $filial; //filial
 
     }
 
@@ -151,22 +185,22 @@ class Bengala extends General
 
         //Salvar/Atualizar preço
         $this->fromPrint = true;
-        $this->mountPrice($productData);
+        $this->mountPriceOffer($productData);
 
         //Salvar preço de promoção, retornar se erro
-        if (!$saved = $this->updateOrSavePrice()) {
+        if (!$saved = $this->updateOrSavePrice(array($this->price))) {
             return false;
+        }
+
+        //Se não houver, adicionar req
+        if (empty($prices)) {
+            $prices[] = $this->price;
         }
 
         //Propriedades de formatos
         $dailyprint->dp_dgcartaz = 118;
         $dailyprint->dp_dgmotivo = 113;
         $dailyprint->dp_tamanho = '148/105';
-
-        //Se não houver, adicionar req
-        if (empty($prices)) {
-            $prices[] = $this->price;
-        }
 
         return parent::createDailyPrint($dailyprint, $prices);
     }

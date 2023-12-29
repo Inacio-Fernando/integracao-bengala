@@ -22,6 +22,12 @@ git config --local user.email $email
 git config --local user.name $name
 
 #se diretório não existir
+if ! [ -d "dumps" ]; then
+    mkdir dumps
+    touch dumps/produtos.json
+fi
+
+#se diretório não existir
 if ! [ -d "logs" ]; then
     mkdir logs
     touch logs/diary-status.txt logs/diary-error.txt logs/diary-log.txt logs/diary-update-error.txt logs/diary-update-log.txt

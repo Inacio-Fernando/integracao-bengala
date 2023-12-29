@@ -72,8 +72,11 @@ function iterateProducts($index)
                 }                
             }
 
+            //Preparar preços a inserir/atualizar
+            $general->mountPrice();
+
             //Criar ou atualizar produto, em caso de erro registrar
-            if (!$product_id = $general->updateOrSavePrice()) {
+            if (!$product_id = $general->updateOrSavePrice((array) $general->price)) {
                 throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar preço. Erro: " . json_encode($productData), 1);
             }
 
