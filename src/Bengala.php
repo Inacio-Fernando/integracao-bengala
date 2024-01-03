@@ -142,9 +142,17 @@ class Bengala extends General
         //Preço Oferta
         $p2 = isset($offerData->precoOferta)? $this->price_formmater($offerData->precoOferta): 0;
 
+        //Valores padrão
+        $price->vlr_valores = $p2; //Preço
+        $price->vlr_idcomercial = 1; //Dinâmica
+
+        //Se oferta app
+        if ($offerData->tipoOferta == "OFERTA APP") {
+            $price->vlr_valores = "$p1!@#$p2"; //Preço
+            $price->vlr_idcomercial = 5; //Dinâmica
+        }
+
         //Atribuir dados 
-        $price->vlr_valores = "$p1!@#$p2"; //Preço
-        $price->vlr_idcomercial = 2; //Dinâmica
         $price->vlr_produto = (int) $offerData->id_produto;
         $price->vlr_filial = (int) $offerData->id_loja;
         $price->vlr_data_de = $offerData->dataInicio;
@@ -172,20 +180,19 @@ class Bengala extends General
     function createDailyPrint(object $dailyobject = null, $prices = [])
     {
         //Se não houver, adicionar req
-        if (is_null($dailyobject)) {
-            $productData = $this->request_data;
-        }
+        $offerData = $this->request_data;
 
         //Salvar/Atualizar Cartaz
         $dailyprint = new stdClass();
         $dailyprint->dp_fortam = (string) 'A6 PAISAGEM';
+        $dailyprint->dp_tamanho = '148/105';
         $dailyprint->dp_estabelecimento = (int) 1;
-        $dailyprint->dp_nome = (string) 'Cartazes - ' . $productData->dataInicio;
-        $dailyprint->dp_data = (string) (new Carbon($productData->dataInicio))->format('Y-m-d');
+        $dailyprint->dp_nome = (string) $offerData->tipoOferta;
+        $dailyprint->dp_data = (string) (new Carbon($offerData->dataInicio))->format('Y-m-d');        
 
         //Salvar/Atualizar preço
         $this->fromPrint = true;
-        $this->mountPriceOffer($productData);
+        $this->mountPriceOffer($offerData);
 
         //Salvar preço de promoção, retornar se erro
         if (!$saved = $this->updateOrSavePrice(array($this->price))) {
@@ -198,11 +205,73 @@ class Bengala extends General
         }
 
         //Propriedades de formatos
-        $dailyprint->dp_dgcartaz = 118;
+        $dailyprint->dp_dgcartaz = 146;
         $dailyprint->dp_dgmotivo = 113;
-        $dailyprint->dp_tamanho = '148/105';
+
+        //Se oferta app
+        if ($offerData->tipoOferta == "OFERTA APP") {
+            $dailyprint->dp_dgcartaz = 229;
+            $dailyprint->dp_dgmotivo = 198;
+        }
 
         return parent::createDailyPrint($dailyprint, $prices);
+    }
+
+    function createMediaIndoorQueue()
+    {
+        //Dados utilizados
+        $offerData = $this->request_data;
+
+        //Atributos para composição de url de impressão direta
+        $idProduto = $offerData->id_produto;
+        $idPreco = $this->price->vlr_id;
+
+        //Se nulo, formato definido por departamento
+        switch ((int) $this->price->vlr_idcomercial) {
+            case 1:
+                $idMotivo = 33;
+                $idCartaz = 33;
+                $tamanhoPapel = 340;
+                break;
+            default:
+                $idMotivo = null;
+                $idCartaz = null;
+                $tamanhoPapel = null;
+                break;
+        }
+
+        //Não foi criado item em impressão
+        if (is_null($idMotivo) || is_null($tamanhoPapel) || is_null($idCartaz)) {
+            return false;
+        }
+
+        //Objeto de impressão
+        $midia = new stdClass();
+        $midia->md_url = "https://bengala.cartazfacil.pro/papel-lote-cartaz.php?id_dMotivo=$idMotivo&tam_papel=$tamanhoPapel&id_dCartaz=$idCartaz&id_valor=$idPreco&nParcelas=1&tax_id=null&cartazOuTv=tv&id_produto=$idProduto";
+        $midia->md_empresa = '1';
+        $midia->md_filial = (string) $this->price->vlr_filial;
+        $midia->md_usuario = (string) $this->price->vlr_usuario;
+        $midia->md_quadrante = '1';
+        $midia->md_divisao = '1';
+        $midia->md_tamtv = '43';
+        $midia->md_tempo = '10';
+        $midia->md_token = "JORNAL";
+        $midia->md_lista = "Não";
+        $midia->md_idProduto = (int) $idProduto;
+        $midia->md_idValorProd = (int) $idPreco;
+        $midia->md_transicao = 'NULL';
+        $midia->md_dgCartaz = $idCartaz;
+
+        //Inserir item de mídia indoor
+        $result = $this->getDb()->insertMediaIndoorQueue($midia);
+
+        return $result;
+    }
+
+    static function clearMediaIndoor($truncate = false)
+    {
+        //Limpar apenas lista de items tabela cf_midia baseado nos parametros
+        return (new self)->getDb()->deleteFrom('cf_midia', 'md_token', 'JORNAL');
     }
 
 }

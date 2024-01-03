@@ -24,8 +24,6 @@ if (!dir('./logs')) {
 //Cliente API
 $vrsoftware = new VRSoftware();
 
-$GLOBALS['vrsoftware'] = $vrsoftware;
-
 function iterateProducts($index)
 {
 
@@ -69,7 +67,7 @@ function iterateProducts($index)
             if (!empty((array) $productData->familia)) {
                 if (!$family_id = $general->updateOrSaveFamily()) {
                     throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($productData), 1);
-                }                
+                }
             }
 
             //Preparar preços a inserir/atualizar
@@ -96,6 +94,7 @@ function iterateOffer($index)
 {
 
     global $vrsoftware;
+    global $family;
 
     //Data inicial
     $dia = new Carbon('01-11-2023');
@@ -113,10 +112,10 @@ function iterateOffer($index)
     }
 
     //Iterar sobre items retornados
-    foreach ($response->retorno->conteudo as $key => $dbProduct) {
+    foreach ($response->retorno->conteudo as $key => $offerItem) {
 
         //Converter em objeto
-        $productData = (object) $dbProduct;
+        $offerData = (object) $offerItem;
 
         try {
 
@@ -124,18 +123,48 @@ function iterateOffer($index)
             $general = new Bengala();
 
             //Atribuir objeto contexto
-            $general->setRequestData($productData);
+            $general->setRequestData($offerData);
 
-            //Criar ou atualizar produto, em caso de erro registrar
-            if (!$general->createDailyPrint()) {
-                throw new Exception("Oferta:" . $productData->id . ". Não foi possível salvar oferta/dailyprint. Erro: " . json_encode($productData), 1);
+            $filial = (int) $offerData->id_loja;
+            $tem_familia = (boolean) $offerData->ofertaFamilia;
+            $familia_produto = $offerData->familia;
+
+            //Criar/Atualizar familia se existir
+            if ($tem_familia) {
+                if (!$family_id = $general->updateOrSaveFamily()) {
+                    throw new Exception("Produto:" . $offerData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($offerData), 1);
+                }
             }
+
+            //Se item já existir em array de familias usadas por filial, pular próximo
+            if ($tem_familia
+                && key_exists($filial, $family)
+                && in_array($familia_produto->id, $family[$filial])
+            ) {
+                continue;
+            } else if ($tem_familia) {
+                //Família de oferta registrada para não repetir
+                $family[$filial][] = (int) $familia_produto->id;
+            }            
+
+            //Criar dailyprint (registra tb cf_valor)
+            if (!$general->createDailyPrint()) {
+                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar oferta/dailyprint. Erro: " . json_encode($offerData), 1);
+            }
+
+            //Se cf_valor da oferta for dinamica = 1
+            if ($general->price->vlr_idcomercial == 1) {
+                //Criar um nova linha de mídia indoor
+                if (!$general->createMediaIndoorQueue()) {
+                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
+                }
+            }            
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
         }
 
-        file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Oferta/Dailyprint Cadastrada. Oferta ID:" . $productData->id, FILE_APPEND);
+        file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Oferta/Dailyprint/MídiaIndoor Cadastrada. Oferta ID:" . $offerData->id, FILE_APPEND);
 
     }
 
@@ -143,8 +172,15 @@ function iterateOffer($index)
     iterateOffer($index + 1);
 }
 
-//Iniciar funções
-iterateProducts(0);
-iterateOffer(0);
+//Inicializar vars globais
+$GLOBALS['family'] = array(0); 
+$GLOBALS['vrsoftware'] = $vrsoftware;
+
+//Salvar produtos
+iterateProducts(0); 
+
+//Salvar Ofertas
+Bengala::clearMediaIndoor(); //Excluir md_token='JORNAL' (Limpar midias)
+iterateOffer(0); //Salvar ofertas/dailyprint/midia
 
 echo "diary.php: Execução de script finalizado!";
