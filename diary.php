@@ -30,7 +30,7 @@ function iterateProducts($index)
     global $vrsoftware;
 
     //Data inicial
-    $dia = new Carbon('01-09-2023');
+    $dia = new Carbon('09-11-2023');
     $time = $dia->format('d/m/Y H:m');
 
     //Retornar produtos do dia começando a partir zero hora
@@ -97,7 +97,7 @@ function iterateOffer($index)
     global $family;
 
     //Data inicial
-    $dia = new Carbon('01-11-2023');
+    $dia = new Carbon('09-11-2023');
     $time = $dia->format('d/m/Y H:m');
 
     //Retornar produtos do dia começando a partir zero hora
@@ -119,7 +119,7 @@ function iterateOffer($index)
 
         try {
 
-            // Funções gerais
+            //Funções gerais
             $general = new Bengala();
 
             //Atribuir objeto contexto
@@ -149,7 +149,7 @@ function iterateOffer($index)
             }
 
             //Carregar produto em contexto via DB
-            if ($general->getProduct($offerData->id_produto, 'code')) {
+            if (!$general->getProduct($offerData->id_produto, 'code')) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto em contexto 'id_produto'. Erro: " . json_encode($offerData), 1);
             }
 
