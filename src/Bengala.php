@@ -153,7 +153,7 @@ class Bengala extends General
         }
 
         //Atribuir dados 
-        $price->vlr_produto = (int) $offerData->id_produto;
+        $price->vlr_produto = (int) $this->product->prod_id;
         $price->vlr_filial = (int) $offerData->id_loja;
         $price->vlr_data_de = $offerData->dataInicio;
         $price->vlr_data_ate = $offerData->dataTermino;        
@@ -184,6 +184,7 @@ class Bengala extends General
 
         //Salvar/Atualizar Cartaz
         $dailyprint = new stdClass();
+        $dailyprint->dp_produto = (int) $this->product->prod_id;
         $dailyprint->dp_fortam = (string) 'A6 PAISAGEM';
         $dailyprint->dp_tamanho = '148/105';
         $dailyprint->dp_estabelecimento = (int) 1;
@@ -223,7 +224,7 @@ class Bengala extends General
         $offerData = $this->request_data;
 
         //Atributos para composição de url de impressão direta
-        $idProduto = $offerData->id_produto;
+        $idProduto = $this->product->prod_id;
         $idPreco = $this->price->vlr_id;
 
         //Se nulo, formato definido por departamento

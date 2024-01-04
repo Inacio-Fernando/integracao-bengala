@@ -125,6 +125,7 @@ function iterateOffer($index)
             //Atribuir objeto contexto
             $general->setRequestData($offerData);
 
+            //Variaveis de familia/filial
             $filial = (int) $offerData->id_loja;
             $tem_familia = (boolean) $offerData->ofertaFamilia;
             $familia_produto = $offerData->familia;
@@ -145,7 +146,12 @@ function iterateOffer($index)
             } else if ($tem_familia) {
                 //Família de oferta registrada para não repetir
                 $family[$filial][] = (int) $familia_produto->id;
-            }            
+            }
+
+            //Carregar produto em contexto via DB
+            if ($general->getProduct($offerData->id_produto, 'code')) {
+                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto em contexto 'id_produto'. Erro: " . json_encode($offerData), 1);
+            }
 
             //Criar dailyprint (registra tb cf_valor)
             if (!$general->createDailyPrint()) {
