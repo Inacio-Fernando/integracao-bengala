@@ -256,11 +256,13 @@ class Bengala extends General
         $midia->md_tamtv = '43';
         $midia->md_tempo = '10';
         $midia->md_token = "JORNAL";
-        $midia->md_lista = "Não";
+        $midia->md_lista = "nao";
         $midia->md_idProduto = (int) $idProduto;
         $midia->md_idValorProd = (int) $idPreco;
         $midia->md_transicao = 'NULL';
         $midia->md_dgCartaz = $idCartaz;
+        $midia->md_datainicio = (string) (new Carbon($offerData->dataInicio))->format('Y-m-d');
+        $midia->md_datafim = (string) (new Carbon($offerData->dataTermino))->format('Y-m-d');
 
         //Inserir item de mídia indoor
         $result = $this->getDb()->insertMediaIndoorQueue($midia);
