@@ -30,7 +30,7 @@ function iterateProducts($index)
     global $vrsoftware;
 
     //Data inicial
-    $dia = new Carbon('09-11-2023');
+    $dia = new Carbon();
     $time = $dia->format('d/m/Y H:m');
 
     //Retornar produtos do dia começando a partir zero hora
@@ -74,7 +74,7 @@ function iterateProducts($index)
             $general->mountPrice();
 
             //Criar ou atualizar produto, em caso de erro registrar
-            if (!$product_id = $general->updateOrSavePrice((array) $general->price)) {
+            if (!$general->updateOrSavePrice((array) $general->price)) {
                 throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar preço. Erro: " . json_encode($productData), 1);
             }
 
@@ -97,7 +97,7 @@ function iterateOffer($index)
     global $family;
 
     //Data inicial
-    $dia = new Carbon('09-11-2023');
+    $dia = new Carbon();
     $time = $dia->format('d/m/Y H:m');
 
     //Retornar produtos do dia começando a partir zero hora
@@ -126,7 +126,7 @@ function iterateOffer($index)
             $general->setRequestData($offerData);
 
             //Variaveis de familia/filial
-            $filial = (int) $offerData->id_loja;
+            $filial = (int) $offerData->idLoja;
             $tem_familia = (boolean) $offerData->ofertaFamilia;
             $familia_produto = $offerData->familia;
 
@@ -149,12 +149,20 @@ function iterateOffer($index)
             }
 
             //Carregar produto em contexto via DB
-            if (!$general->getProduct($offerData->id_produto, 'code')) {
+            if (!$general->getProduct($offerData->idProduto, 'code')) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto em contexto 'id_produto'. Erro: " . json_encode($offerData), 1);
             }
 
+            //Preparar preços a inserir/atualizar
+            $general->mountPriceOffer();
+
+            //Criar ou atualizar produto, em caso de erro registrar
+            if (!$general->updateOrSavePrice(array($general->price))) {
+                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar preço. Erro: " . json_encode($offerData), 1);
+            }
+
             //Criar dailyprint (registra tb cf_valor)
-            if (!$general->createDailyPrint()) {
+            /*if (!$general->createDailyPrint()) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar oferta/dailyprint. Erro: " . json_encode($offerData), 1);
             }
 
@@ -164,7 +172,7 @@ function iterateOffer($index)
                 if (!$general->createMediaIndoorQueue()) {
                     throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
                 }
-            }            
+            }*/           
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);

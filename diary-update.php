@@ -41,8 +41,6 @@ function iterateProducts($index)
     //Retornar Resposta da API
     $response = $vrsoftware->getResponseContent();
 
-    //$response = json_decode(file_get_contents('./dumps/produtos.json', true));
-
     if (!$response || !property_exists($response, 'retorno') || !property_exists($response->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
         file_put_contents('./logs/diary-update-log.txt', "\n" . Carbon::now() . " - Nenhum produto retornado em requisição de produtos. Início Período: $time, Páginação: $index.", FILE_APPEND);
         return;
@@ -89,7 +87,7 @@ function iterateProducts($index)
             file_put_contents('./logs/diary-update-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
         }
 
-        file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Produto Atualizado/Cadastrado. Produto ID:" . $productData->id, FILE_APPEND);
+        file_put_contents('./logs/diary-update-log.txt', "\n" . Carbon::now() . " - Produto Atualizado/Cadastrado. Produto ID:" . $productData->id, FILE_APPEND);
 
     }
 

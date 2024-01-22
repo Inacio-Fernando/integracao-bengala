@@ -126,7 +126,7 @@ class Bengala extends General
         $price->vlr_hora = '03:03';           
 
         //Função para formatação de preço e dinâmica em objeto 'oferta'
-        $this->fromPrint && $this->priceOffer($price, $offerData);
+        $this->priceOffer($price, $offerData);
 
         $this->price = $price;       
 
@@ -142,19 +142,25 @@ class Bengala extends General
         //Preço Oferta
         $p2 = isset($offerData->precoOferta)? $this->price_formmater($offerData->precoOferta): 0;
 
+        //Preço Connect
+        $p3 = isset($offerData->precoOfertaConnect)? $this->price_formmater($offerData->precoOfertaConnect): 0;
+
+        //Se preço Oferta existir, senão preço Normal
+        $preco = ($p2 > 0)? $p2 : $p1;
+
         //Valores padrão
-        $price->vlr_valores = $p2; //Preço
+        $price->vlr_valores = $preco; //Preço
         $price->vlr_idcomercial = 1; //Dinâmica
 
-        //Se oferta app
-        if ($offerData->tipoOferta == "OFERTA APP") {
-            $price->vlr_valores = "$p1!@#$p2"; //Preço
-            $price->vlr_idcomercial = 5; //Dinâmica
+        //Se preço Connect existir e maior que 0
+        if ($p3 > 0) {
+            $price->vlr_valores = "$preco!@#$p3"; //Preço
+            $price->vlr_idcomercial = 5; //Dinâmica    
         }
 
         //Atribuir dados 
         $price->vlr_produto = (int) $this->product->prod_id;
-        $price->vlr_filial = (int) $offerData->id_loja;
+        $price->vlr_filial = (int) $offerData->idLoja;
         $price->vlr_data_de = $offerData->dataInicio;
         $price->vlr_data_ate = $offerData->dataTermino;        
 
@@ -192,7 +198,6 @@ class Bengala extends General
         $dailyprint->dp_data = (string) (new Carbon($offerData->dataInicio))->format('Y-m-d');        
 
         //Salvar/Atualizar preço
-        $this->fromPrint = true;
         $this->mountPriceOffer($offerData);
 
         //Salvar preço de promoção, retornar se erro
