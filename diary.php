@@ -122,6 +122,9 @@ function iterateOffer($index)
             //Funções gerais
             $general = new Bengala();
 
+            //Filiais a ignorar interação
+            if (in_array($offerData->idLoja, $general->ignoreBranch)) continue;
+
             //Atribuir objeto contexto
             $general->setRequestData($offerData);
 

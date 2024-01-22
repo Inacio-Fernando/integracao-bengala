@@ -14,6 +14,7 @@ class Bengala extends General
 {
     public $family = null;
     protected $fromPrint = false;
+    public $ignoreBranch = [6, 7, 9];
 
     function mountProduct($productData = null)
     {
@@ -79,6 +80,8 @@ class Bengala extends General
         $this->price = [];
 
         foreach ($productData->produtoAutomacao as $p) {
+
+            if (in_array($p->loja->id, $this->ignoreBranch)) continue;
             
             //Ver qual data
             $data_de = date('Y-m-d');
@@ -160,7 +163,7 @@ class Bengala extends General
 
         //Atribuir dados 
         $price->vlr_produto = (int) $this->product->prod_id;
-        $price->vlr_filial = (int) $offerData->idLoja;
+        $price->vlr_filial = (int) $this->branchCheck((int) $offerData->idLoja);
         $price->vlr_data_de = $offerData->dataInicio;
         $price->vlr_data_ate = $offerData->dataTermino;        
 
@@ -173,7 +176,7 @@ class Bengala extends General
         $p1 = (!empty($productData->precoVenda))? $this->price_formmater($productData->precoVenda) : 0;
 
         //Atribuir filial
-        $filial = (isset($productData->loja) && property_exists($productData->loja, 'id'))? (int) $productData->loja->id : 1;
+        $filial = (isset($productData->loja) && property_exists($productData->loja, 'id'))? (int) $this->branchCheck((int) $productData->loja->id) : 1;
         
         //Atribuir dados padrão
         $price->vlr_valores = $p1; //preço comum
@@ -274,6 +277,19 @@ class Bengala extends General
         $result = $this->getDb()->insertMediaIndoorQueue($midia);
 
         return $result;
+    }
+
+    public function branchCheck(int $idLoja) {        
+        switch ($idLoja) {
+            case 8:
+                $loja = 6;
+                break;            
+            default:
+                $loja = $idLoja;
+                break;
+        }
+
+        return $loja;
     }
 
     static function clearMediaIndoor($truncate = false)
