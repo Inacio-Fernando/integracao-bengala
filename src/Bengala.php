@@ -27,7 +27,7 @@ class Bengala extends General
         $product->prod_nome = $this->name_formatter($productData->descricaoCompleta);
         $product->prod_desc = $this->name_formatter($productData->descricaoCompleta, 200);
         $product->prod_desc_tabloide = $this->name_formatter($productData->descricaoReduzida, 200);
-        $product->prod_proporcao = substr($productData->proporcao, 0, 50);
+        $product->prod_proporcao = substr($this->proportion_formatter($productData->proporcao), 0, 50);
         $product->prod_sessao = substr($productData->mercadologico1, 0, 75);
         $product->prod_grupo = substr($productData->mercadologico2, 0, 75);
         $product->prod_subgrupo = substr($productData->mercadologico3, 0, 75);
@@ -290,6 +290,11 @@ class Bengala extends General
         }
 
         return $loja;
+    }
+
+    public function proportion_formatter($text)
+    {
+        return (in_array($text, ['PC', 'FD', 'CX']))? 'UN' : $text;
     }
 
     static function clearMediaIndoor($truncate = false)
