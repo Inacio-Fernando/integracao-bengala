@@ -106,6 +106,8 @@ function iterateOffer($index)
     //Retornar Resposta da API
     $response = $vrsoftware->getResponseContent();
 
+    #$response = json_decode(file_get_contents('dumps/ofertas.json', true));
+
     if (!$response || !property_exists($response, 'retorno') || !property_exists($response->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
         file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Nenhuma oferta retornada em requisição de ofertas. Início Período: $time, Páginação: $index.", FILE_APPEND);
         return;
@@ -165,12 +167,12 @@ function iterateOffer($index)
             }
 
             //Criar dailyprint (registra tb cf_valor)
-            /*if (!$general->createDailyPrint()) {
-                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar oferta/dailyprint. Erro: " . json_encode($offerData), 1);
+            if (!$general->createDailyPrint()) {
+                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar dailyprint da oferta. Erro: " . json_encode($offerData), 1);
             }
 
             //Se cf_valor da oferta for dinamica = 1
-            if ($general->price->vlr_idcomercial == 1) {
+            /*if ($general->price->vlr_idcomercial == 1) {
                 //Criar um nova linha de mídia indoor
                 if (!$general->createMediaIndoorQueue()) {
                     throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
@@ -197,7 +199,7 @@ $GLOBALS['vrsoftware'] = $vrsoftware;
 iterateProducts(0); 
 
 //Salvar Ofertas
-Bengala::clearMediaIndoor(); //Excluir md_token='JORNAL' (Limpar midias)
+Bengala::clearDailyPrint(); //Limpar impressões
 iterateOffer(0); //Salvar ofertas/dailyprint/midia
 
 echo "diary.php: Execução de script finalizado!";
