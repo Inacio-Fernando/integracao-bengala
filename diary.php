@@ -125,7 +125,8 @@ function iterateOffer($index)
             $general = new Bengala();
 
             //Filiais a ignorar interação
-            if (in_array($offerData->idLoja, $general->ignoreBranch)) continue;
+            if (in_array($offerData->idLoja, $general->ignoreBranch))
+                continue;
 
             //Atribuir objeto contexto
             $general->setRequestData($offerData);
@@ -143,7 +144,8 @@ function iterateOffer($index)
             }
 
             //Se item já existir em array de familias usadas por filial, pular próximo
-            if ($tem_familia
+            if (
+                $tem_familia
                 && key_exists($filial, $family)
                 && in_array($familia_produto->id, $family[$filial])
             ) {
@@ -156,6 +158,16 @@ function iterateOffer($index)
             //Carregar produto em contexto via DB
             if (!$general->getProduct($offerData->idProduto, 'code')) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto em contexto 'id_produto'. Erro: " . json_encode($offerData), 1);
+            }
+
+            //Atualização 14/02/2024 
+            //Atualizar 'prod_desc' com descrição de familia se existir
+            if ($tem_familia && $familia_produto) {
+                $general->product->prod_desc = $familia_produto->descricao;
+                unset ($general->product->prod_familia);
+                if (!$general->getDb()->updateProduct($general->product->prod_id, (object) $general->product)) {
+                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível atualizar produto com prod_desc de família. Erro: " . json_encode($offerData), 1);
+                }
             }
 
             //Preparar preços a inserir/atualizar
@@ -177,7 +189,7 @@ function iterateOffer($index)
                 if (!$general->createMediaIndoorQueue()) {
                     throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
                 }
-            }*/           
+            }*/
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
@@ -192,7 +204,7 @@ function iterateOffer($index)
 }
 
 //Inicializar vars globais
-$GLOBALS['family'] = array(0); 
+$GLOBALS['family'] = array(0);
 $GLOBALS['vrsoftware'] = $vrsoftware;
 
 //Salvar produtos

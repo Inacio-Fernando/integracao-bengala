@@ -33,9 +33,9 @@ class Bengala extends General
         $product->prod_subgrupo = substr($productData->mercadologico3, 0, 75);
 
         //Verificar se existem dados em 'familia'
-        if (!empty((array) $productData->familia)) {
+        /*if (!empty((array) $productData->familia)) {
             $product->prod_familia = substr($productData->familia->id, 0, 50);
-        }
+        }*/
 
         //Verificar se existem dados em 'produtoAutomacao'
         if (!empty($productData->produtoAutomacao)) {
