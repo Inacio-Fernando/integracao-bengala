@@ -392,6 +392,11 @@ class Bengala extends General
             case 1:
                 $idMotivo = 33;
                 $idCartaz = 33;
+                $tamanhoPapel = 21;
+                break;
+            case 5:
+                $idMotivo = 216;
+                $idCartaz = 279;
                 $tamanhoPapel = 340;
                 break;
             default:
@@ -416,8 +421,8 @@ class Bengala extends General
         $midia->md_divisao = '1';
         $midia->md_tamtv = '43';
         $midia->md_tempo = '10';
-        $midia->md_token = "JORNAL";
-        $midia->md_lista = "nao";
+        $midia->md_token = "JORNAL_B".$this->price->vlr_filial;
+        $midia->md_lista = "Nao";
         $midia->md_idProduto = (int) $idProduto;
         $midia->md_idValorProd = (int) $idPreco;
         $midia->md_transicao = 'NULL';
@@ -452,8 +457,12 @@ class Bengala extends General
 
     static function clearMediaIndoor($truncate = false)
     {
-        //Limpar apenas lista de items tabela cf_midia baseado nos parametros
-        return (new self)->getDb()->deleteFrom('cf_midia', 'md_token', 'JORNAL');
+        $db = (new self)->getDb();
+        $today = Carbon::today()->format('Y-m-d');
+        //Limpar apenas lista de items tabela cf_midia baseado em data
+        $query = $db->conn->prepare("DELETE FROM cf_midia WHERE md_datafim < $today");
+        $result = $query->execute();
+        return $result;
     }
 
     static function clearDailyPrint($truncate = false)

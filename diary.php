@@ -183,13 +183,10 @@ function iterateOffer($index)
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar dailyprint da oferta. Erro: " . json_encode($offerData), 1);
             }
 
-            //Se cf_valor da oferta for dinamica = 1
-            /*if ($general->price->vlr_idcomercial == 1) {
-                //Criar um nova linha de mídia indoor
-                if (!$general->createMediaIndoorQueue()) {
-                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
-                }
-            }*/
+            //Criar mídia indoor
+            if (!$general->createMediaIndoorQueue()) {
+                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
+            }
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
@@ -213,5 +210,6 @@ iterateProducts(0);
 //Salvar Ofertas
 Bengala::clearDailyPrint(); //Limpar impressões
 iterateOffer(0); //Salvar ofertas/dailyprint/midia
+Bengala::clearMediaIndoor(); //Limpar midia indoor
 
 echo "diary.php: Execução de script finalizado!";
