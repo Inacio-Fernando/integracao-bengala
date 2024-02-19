@@ -183,10 +183,13 @@ function iterateOffer($index)
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar dailyprint da oferta. Erro: " . json_encode($offerData), 1);
             }
 
-            //Criar mídia indoor
-            if (!$general->createMediaIndoorQueue()) {
-                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
-            }
+            //Atualização: 19/02/2024
+            //Criar mídia indoor apenas com tipo de oferta contiver 'jornal'
+            if (strpos(strtolower($offerData->tipoOferta), 'jornal') !== false) {
+                if (!$general->createMediaIndoorQueue()) {
+                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
+                }
+            }            
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
