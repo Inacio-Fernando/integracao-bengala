@@ -212,7 +212,7 @@ iterateProducts(0);
 
 //Salvar Ofertas
 Bengala::clearDailyPrint(); //Limpar impressões
-iterateOffer(0); //Salvar ofertas/dailyprint/midia
 Bengala::clearMediaIndoor(); //Limpar midia indoor
+iterateOffer(0); //Salvar ofertas/dailyprint/midia
 
 echo "diary.php: Execução de script finalizado!";

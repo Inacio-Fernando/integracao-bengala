@@ -458,9 +458,9 @@ class Bengala extends General
     static function clearMediaIndoor($truncate = false)
     {
         $db = (new self)->getDb();
-        $today = Carbon::today()->format('Y-m-d');
+        
         //Limpar apenas lista de items tabela cf_midia baseado em data
-        $query = $db->conn->prepare("DELETE FROM cf_midia WHERE md_datafim < $today");
+        $query = $db->conn->prepare("DELETE FROM cf_midia WHERE md_token LIKE '%JORNAL_B%'");
         $result = $query->execute();
         return $result;
     }
