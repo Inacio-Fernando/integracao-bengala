@@ -200,16 +200,32 @@ class Bengala extends General
         $dailyprint->dp_data = (string) (new Carbon($offerData->dataInicio))->format('Y-m-d');
 
         //Se preço não existir
-        if (empty($this->price)) return false;
+        if (empty($this->price))
+            return false;
 
         //Instanciar data da oferta
         $date = Carbon::createFromFormat('Y-m-d', $offerData->dataInicio);
 
-        //Verificar se dataInicio é ultima quinta-feira do mês
-        $listaCartaz = ($date->isFriday() && $date->isLastWeek()) ? $this->createDiaBPrint() : $this->createPrint();
+        //Atualização: 29/02/2024
+        //Se oferta interna e dinamica = 1, gerar cartazes especificos
+        if ($offerData->tipoOferta == "OFERTA INTERNA" 
+        && $this->price->vlr_idcomercial == 1) {
+            $listaCartaz = [
+                [
+                    'dp_dgcartaz' => 149,
+                    'dp_dgmotivo' => 137,
+                    'dp_tamanho' => '148/105',
+                    'dp_fortam' => 'A6 PAISAGEM'
+                ]
+            ];
+        } else {
+            //Verificar se dataInicio é ultima quinta-feira do mês
+            $listaCartaz = ($date->isFriday() && $date->isLastWeek()) ? $this->createDiaBPrint() : $this->createPrint();
+        }
 
         //Se não houver cartazes para impressão
-        if (empty($listaCartaz)) return false;
+        if (empty($listaCartaz))
+            return false;
 
         //Cadastrar multiplas impressões
         foreach ($listaCartaz as $cartaz) {
@@ -421,7 +437,7 @@ class Bengala extends General
         $midia->md_divisao = '1';
         $midia->md_tamtv = '43';
         $midia->md_tempo = '10';
-        $midia->md_token = "JORNAL_B".$this->price->vlr_filial;
+        $midia->md_token = "JORNAL_B" . $this->price->vlr_filial;
         $midia->md_lista = "Nao";
         $midia->md_idProduto = (int) $idProduto;
         $midia->md_idValorProd = (int) $idPreco;
@@ -458,7 +474,7 @@ class Bengala extends General
     static function clearMediaIndoor($truncate = false)
     {
         $db = (new self)->getDb();
-        
+
         //Limpar apenas lista de items tabela cf_midia baseado em data
         $query = $db->conn->prepare("DELETE FROM cf_midia WHERE md_token LIKE '%JORNAL_B%'");
         $result = $query->execute();
