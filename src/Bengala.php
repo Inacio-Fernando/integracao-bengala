@@ -220,7 +220,7 @@ class Bengala extends General
             ];
         } else {
             //Verificar se dataInicio é ultima quinta-feira do mês
-            $listaCartaz = ($date->isFriday() && $date->isLastWeek()) ? $this->createDiaBPrint() : $this->createPrint();
+            $listaCartaz = ($date->isThursday() && $date->weekOfMonth >= 4) ? $this->createDiaBPrint() : $this->createPrint();
         }
 
         //Se não houver cartazes para impressão
