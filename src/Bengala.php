@@ -1,4 +1,5 @@
 <?php
+
 namespace IntegracaoBengala;
 
 use Carbon\Carbon;
@@ -50,7 +51,6 @@ class Bengala extends General
         $this->depto = $product->prod_sessao;
 
         return $this->product = $product;
-
     }
 
     function mountFamily($productData = null)
@@ -64,7 +64,6 @@ class Bengala extends General
         $family->fam_nomefamilia = $this->name_formatter($productData->familia->descricao);
 
         return $this->family = $family;
-
     }
 
     function mountPrice($productData = null)
@@ -100,7 +99,6 @@ class Bengala extends General
             //Função para formatação de preço e dinâmica
             $this->priceProduct($price, $p);
             $this->price[] = $price;
-
         }
 
         return (object) $this->price;
@@ -167,7 +165,6 @@ class Bengala extends General
         $price->vlr_filial = (int) $this->branchCheck((int) $offerData->idLoja);
         $price->vlr_data_de = $offerData->dataInicio;
         $price->vlr_data_ate = $offerData->dataTermino;
-
     }
 
     private function priceProduct($price, $productData)
@@ -208,8 +205,10 @@ class Bengala extends General
 
         //Atualização: 29/02/2024
         //Se oferta interna e dinamica = 1, gerar cartazes especificos
-        if ($offerData->tipoOferta == "OFERTA INTERNA" 
-        && $this->price->vlr_idcomercial == 1) {
+        if (
+            $offerData->tipoOferta == "OFERTA INTERNA"
+            && $this->price->vlr_idcomercial == 1
+        ) {
             $listaCartaz = [
                 [
                     'dp_dgcartaz' => 149,
@@ -390,7 +389,6 @@ class Bengala extends General
 
             //Inserir item de impressão para cada filial
             $result = $this->getDb()->insertDailyPrint($dailyprint);
-
         }
 
         return $result;
@@ -486,7 +484,6 @@ class Bengala extends General
     static function clearDailyPrint($truncate = false)
     {
         //Limpar apenas lista de items tabela cf_dailyprint baseado nos parametros
-        return (new self)->getDb()->deleteFrom('cf_dailyprint', 'dp_nome', 'IMPRESSAO_DIARIA_BENGALA');
+        return (new self)->getDb()->deleteFrom('cf_dailyprint', 'dp_usuario', '1');
     }
-
 }
