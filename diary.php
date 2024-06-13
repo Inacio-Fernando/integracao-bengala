@@ -155,18 +155,25 @@ function iterateOffer($index)
                 $family[$filial][] = (int) $familia_produto->id;
             }
 
-            //Carregar produto em contexto via DB
+            //Carregar produto em contexto via DB, em caso de não existir requisitar API
             if (!$general->getProduct($offerData->idProduto, 'code')) {
                 //Carregar produto via API
-                $vrsoftware->getProduct($offerData->idProduto);
-                $produtoResponse = $vrsoftware->getResponseContent();
+                $temp = clone $vrsoftware;
+                $temp->getProduct((int) $offerData->idProduto);
+                $produtoResponse = $temp->getResponseContent();
 
                 //Se requisição não retornar produto
                 if (!$produtoResponse || !property_exists($produtoResponse, 'retorno') || !property_exists($produtoResponse->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
-                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto com id: $offerData->idProduto. Erro: " . json_encode($offerData), 1);
+                    throw new Exception("Produto:" . $offerData->idProduto . ". Não foi possível encontrar produto com 'id_produto' informado. Erro: " . json_encode($offerData), 1);
                 }
 
-                $general->mountProduct((object) $produtoResponse->retorno->conteudo[0]);
+                //Formatar produto
+                $productData = $general->mountProduct((object) $produtoResponse->retorno->conteudo[0]);
+
+                //Salvar produto no banco
+                if (!$general->updateOrSaveProduct($productData)) {
+                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar produto 'id_produto'. Erro: " . json_encode($offerData), 1);
+                }
             }
 
             //Atualização 14/02/2024 
