@@ -157,7 +157,16 @@ function iterateOffer($index)
 
             //Carregar produto em contexto via DB
             if (!$general->getProduct($offerData->idProduto, 'code')) {
-                throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto em contexto 'id_produto'. Erro: " . json_encode($offerData), 1);
+                //Carregar produto via API
+                $vrsoftware->getProduct($offerData->idProduto);
+                $produtoResponse = $vrsoftware->getResponseContent();
+
+                //Se requisição não retornar produto
+                if (!$produtoResponse || !property_exists($produtoResponse, 'retorno') || !property_exists($produtoResponse->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
+                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível encontrar produto com id: $offerData->idProduto. Erro: " . json_encode($offerData), 1);
+                }
+
+                $general->mountProduct((object) $produtoResponse->retorno->conteudo[0]);
             }
 
             //Atualização 14/02/2024 
@@ -208,7 +217,7 @@ $GLOBALS['family'] = array(0);
 $GLOBALS['vrsoftware'] = $vrsoftware;
 
 //Salvar produtos
-iterateProducts(0); 
+iterateProducts(0);
 
 //Salvar Ofertas
 Bengala::clearDailyPrint(); //Limpar impressões

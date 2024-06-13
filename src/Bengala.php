@@ -218,10 +218,7 @@ class Bengala extends General
                 ]
             ];
         } else {
-            //$last = $date->isLastWeek();
-            //$lastM = $date->lastOfMonth($date::THURSDAY);
-            //Verificar se dataInicio é ultima quinta-feira do mês
-            $listaCartaz = ($date->isThursday() && $date->isLastWeek()) ? $this->createDiaBPrint() : $this->createPrint();
+            $listaCartaz = $this->createPrint();
         }
 
         //Se não houver cartazes para impressão
@@ -336,6 +333,21 @@ class Bengala extends General
             default:
                 break;
         }
+
+        //Atualização 13/06/2024
+        //Adicionar regras todas as lojas
+        $listaCartaz = array_merge($listaCartaz, [
+            array_combine($modeloCartaz, [293, 227, '148/105', 'A6 PAISAGEM SAZONAL']),
+            array_combine($modeloCartaz, [296, 225, '210/297', 'A4 RETRATO SAZONAL']),
+            array_combine($modeloCartaz, [297, 229, '420/594', 'A3 COMBINADO SAZONAL']),
+            array_combine($modeloCartaz, [299, 231, '600/640', 'BANNER 600x640 SAZONAL']),
+            array_combine($modeloCartaz, [301, 232, '900/1220', 'BANNER DUPLO SAZONAL']),
+            array_combine($modeloCartaz, [302, 234, '900/1220', 'BANNER RETRATO 900x1220 SAZONAL']),
+            array_combine($modeloCartaz, [294, 228, '148/105', 'A6 PAISAGEM SAZONAL']),
+            array_combine($modeloCartaz, [295, 226, '210/297', 'A4 RETRATO SAZONAL']),
+            array_combine($modeloCartaz, [300, 233, '900/1220', 'BANNER DUPLO SAZONAL']),
+            array_combine($modeloCartaz, [298, 230, '420/594', 'A3 COMBINADO SAZONAL']),
+        ]);
 
         return $listaCartaz;
     }
