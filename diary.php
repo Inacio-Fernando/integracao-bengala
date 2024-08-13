@@ -138,8 +138,29 @@ function iterateOffer($index)
 
             //Criar/Atualizar familia se existir
             if ($tem_familia) {
-                if (!$family_id = $general->updateOrSaveFamily()) {
+                if (!$has_family = $general->updateOrSaveFamily()) {
                     throw new Exception("Produto:" . $offerData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($offerData), 1);
+                }
+            }
+
+            //Carregar produto em contexto via DB, em caso de não existir requisitar API
+            if (!$general->getProduct($offerData->idProduto, 'code')) {
+                //Carregar produto via API
+                $temp = clone $vrsoftware;
+                $temp->getProduct((int) $offerData->idProduto);
+                $produtoResponse = $temp->getResponseContent();
+
+                //Se requisição não retornar produto
+                if (!$produtoResponse || !property_exists($produtoResponse, 'retorno') || !property_exists($produtoResponse->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
+                    throw new Exception("Produto:" . $offerData->idProduto . ". Não foi possível encontrar produto com 'id_produto' informado. Erro: " . json_encode($offerData) . json_encode($produtoResponse), 1);
+                }
+
+                //Formatar produto
+                $productData = $general->mountProduct((object) $produtoResponse->retorno->conteudo[0]);
+
+                //Salvar produto no banco
+                if (!$general->updateOrSaveProduct($productData)) {
+                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar produto 'id_produto'. Erro: " . json_encode($offerData), 1);
                 }
             }
 
@@ -153,27 +174,6 @@ function iterateOffer($index)
             } else if ($tem_familia) {
                 //Família de oferta registrada para não repetir
                 $family[$filial][] = (int) $familia_produto->id;
-            }
-
-            //Carregar produto em contexto via DB, em caso de não existir requisitar API
-            if (!$general->getProduct($offerData->idProduto, 'code')) {
-                //Carregar produto via API
-                $temp = clone $vrsoftware;
-                $temp->getProduct((int) $offerData->idProduto);
-                $produtoResponse = $temp->getResponseContent();
-
-                //Se requisição não retornar produto
-                if (!$produtoResponse || !property_exists($produtoResponse, 'retorno') || !property_exists($produtoResponse->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
-                    throw new Exception("Produto:" . $offerData->idProduto . ". Não foi possível encontrar produto com 'id_produto' informado. Erro: " . json_encode($offerData), 1);
-                }
-
-                //Formatar produto
-                $productData = $general->mountProduct((object) $produtoResponse->retorno->conteudo[0]);
-
-                //Salvar produto no banco
-                if (!$general->updateOrSaveProduct($productData)) {
-                    throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar produto 'id_produto'. Erro: " . json_encode($offerData), 1);
-                }
             }
 
             //Atualização 14/02/2024 
@@ -205,7 +205,7 @@ function iterateOffer($index)
                 if (!$general->createMediaIndoorQueue()) {
                     throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
                 }
-            }            
+            }
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
@@ -224,7 +224,7 @@ $GLOBALS['family'] = array(0);
 $GLOBALS['vrsoftware'] = $vrsoftware;
 
 //Salvar produtos
-iterateProducts(0);
+//iterateProducts(0);
 
 //Salvar Ofertas
 Bengala::clearDailyPrint(); //Limpar impressões
