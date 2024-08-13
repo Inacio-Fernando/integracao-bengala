@@ -152,7 +152,7 @@ function iterateOffer($index)
 
                 //Se requisição não retornar produto
                 if (!$produtoResponse || !property_exists($produtoResponse, 'retorno') || !property_exists($produtoResponse->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
-                    throw new Exception("Produto:" . $offerData->idProduto . ". Não foi possível encontrar produto com 'id_produto' informado. Erro: " . json_encode($offerData) . json_encode($produtoResponse), 1);
+                    throw new Exception("Produto:" . $offerData->idProduto . ". Não foi possível encontrar produto com 'id_produto' informado. Erro: " . json_encode($offerData) . $temp->getLastError(), 1);
                 }
 
                 //Formatar produto
