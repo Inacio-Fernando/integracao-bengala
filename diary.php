@@ -188,9 +188,10 @@ function iterateOffer($index)
 
             //Preparar preços a inserir/atualizar
             $general->mountPriceOffer();
+            $general->clearProductPrices();
 
-            //Criar ou atualizar produto, em caso de erro registrar
-            if (!$general->updateOrSavePrice(array($general->price))) {
+            //Salvar preço
+            if (!$general->getDb()->insertPrice($general->price)) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar preço. Erro: " . json_encode($offerData), 1);
             }
 

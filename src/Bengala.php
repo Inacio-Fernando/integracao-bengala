@@ -184,6 +184,18 @@ class Bengala extends General
 
     }
 
+    public function clearProductPrices()
+    {
+        $dataAtual = date('Y-m-d');
+        $produtoId = $this->product->prod_id;
+        $filial = $this->price->vlr_filial;
+        
+        $query = $this->getDb()->conn->prepare("DELETE FROM cf_valor WHERE vlr_data_ate < '$dataAtual' and vlr_produto = $produtoId and vlr_filial = $filial");
+
+        return $query->execute();
+        
+    }
+
     function createDailyPrint(object $dailyobject = null, $prices = [])
     {
         //Se não houver, adicionar req
@@ -502,4 +514,6 @@ class Bengala extends General
         //Limpar apenas lista de items tabela cf_dailyprint baseado nos parametros
         return (new self)->getDb()->deleteFrom('cf_dailyprint', 'dp_usuario', '1');
     }
+
+    
 }
