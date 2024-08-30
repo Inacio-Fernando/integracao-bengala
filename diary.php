@@ -106,7 +106,7 @@ function iterateOffer($index)
     //Retornar Resposta da API
     $response = $vrsoftware->getResponseContent();
 
-    #$response = json_decode(file_get_contents('dumps/ofertas.json', true));
+    //$response = json_decode(file_get_contents('dumps/ofertas.json', true));
 
     if (!$response || !property_exists($response, 'retorno') || !property_exists($response->retorno, 'conteudo') || count($response->retorno->conteudo) <= 0) {
         file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Nenhuma oferta retornada em requisição de ofertas. Início Período: $time, Páginação: $index.", FILE_APPEND);
@@ -186,14 +186,19 @@ function iterateOffer($index)
                 }
             }
 
-            //Preparar preços a inserir/atualizar
+            //Preparar preços
             $general->mountPriceOffer();
+
+            //Limpar preços antigos
             $general->clearProductPrices();
 
             //Salvar preço
             if (!$general->getDb()->insertPrice($general->price)) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar preço. Erro: " . json_encode($offerData), 1);
             }
+
+            //Atribuir preço salvo a propriedade
+            $general->price = $general->getDb()->getPrice($general->getDb()->resultId());
 
             //Criar dailyprint (registra tb cf_valor)
             if (!$general->createDailyPrint()) {
@@ -225,7 +230,7 @@ $GLOBALS['family'] = array(0);
 $GLOBALS['vrsoftware'] = $vrsoftware;
 
 //Salvar produtos
-//iterateProducts(0);
+iterateProducts(0);
 
 //Salvar Ofertas
 Bengala::clearDailyPrint(); //Limpar impressões
