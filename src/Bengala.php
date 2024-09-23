@@ -53,6 +53,57 @@ class Bengala extends General
         return $this->product = $product;
     }
 
+    //@Override
+    function updateOrSaveProduct($insertData = null)
+    {
+        if (is_null($insertData)) {
+            $insertData = $this->mountProduct();
+        }
+
+        if (empty($insertData)) {
+            return false;
+        }
+
+        if ($product = $this->getDb()->getProductByCode($insertData->prod_cod)) {
+
+            //Ean/SKU de contexto
+            $eans = (strstr($insertData->prod_sku, ",")) ? explode(',', $insertData->prod_sku) : [$insertData->prod_sku];
+
+            //SKU existentes
+            $prod_sku = (strstr($product->prod_sku, ",")) ? explode(',', $product->prod_sku) : [];
+
+            //Adicionar apenas skus não existentes
+            foreach ($eans as $ean) {
+                $ean = trim($ean);
+                //Se sku diferentes, intercalar
+                if (!in_array($ean, $prod_sku)) {
+                    $prod_sku[] = $ean;
+                }
+            }
+
+            //Juntar skus como string
+            $insertData->prod_sku = substr(implode(',', $prod_sku), 0, 300);
+
+            //Se flag 100g, manter as colunas existentes no banco
+            if ($product->prod_flag100g == '1') {
+                $insertData->prod_desc = $product->prod_desc;
+                $insertData->prod_flag100g = $product->prod_flag100g;
+            }
+
+            //Update
+            $result_id = $this->getDb()->updateProduct($product->prod_id, $insertData);
+        } else {
+            //INSERT        
+            $result_id = $this->getDb()->insertProduct($insertData);
+        }
+
+        //Atualizar propriedade de produto
+        $this->getProduct($result_id);
+
+        return $result_id;
+
+    }
+
     function mountFamily($productData = null)
     {
         if (is_null($productData)) {
