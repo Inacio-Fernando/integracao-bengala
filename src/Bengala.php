@@ -88,6 +88,7 @@ class Bengala extends General
             if ($product->prod_flag100g == '1') {
                 $insertData->prod_desc = $product->prod_desc;
                 $insertData->prod_flag100g = $product->prod_flag100g;
+                $insertData->prod_proporcao = $product->prod_proporcao;
             }
 
             //Update
@@ -101,7 +102,6 @@ class Bengala extends General
         $this->getProduct($result_id);
 
         return $result_id;
-
     }
 
     function mountFamily($productData = null)
@@ -240,11 +240,10 @@ class Bengala extends General
         $dataAtual = date('Y-m-d');
         $produtoId = $this->product->prod_id;
         $filial = $this->price->vlr_filial;
-        
+
         $query = $this->getDb()->conn->prepare("DELETE FROM cf_valor WHERE vlr_data_ate < '$dataAtual' and vlr_produto = $produtoId and vlr_filial = $filial");
 
         return $query->execute();
-        
     }
 
     function createDailyPrint(object $dailyobject = null, $prices = [])
@@ -565,6 +564,4 @@ class Bengala extends General
         //Limpar apenas lista de items tabela cf_dailyprint baseado nos parametros
         return (new self)->getDb()->deleteFrom('cf_dailyprint', 'dp_usuario', '1');
     }
-
-    
 }
