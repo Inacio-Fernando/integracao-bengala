@@ -487,13 +487,13 @@ class Bengala extends General
         //Se nulo, formato definido por departamento
         switch ((int) $this->price->vlr_idcomercial) {
             case 1:
-                $idMotivo = 33;
-                $idCartaz = 33;
+                $idMotivo = 237;
+                $idCartaz = 308;
                 $tamanhoPapel = 21;
                 break;
             case 5:
-                $idMotivo = 216;
-                $idCartaz = 279;
+                $idMotivo = 237;
+                $idCartaz = 312;
                 $tamanhoPapel = 340;
                 break;
             default:
@@ -557,7 +557,7 @@ class Bengala extends General
         $db = (new self)->getDb();
 
         //Limpar apenas lista de items tabela cf_midia baseado em data
-        $query = $db->conn->prepare("DELETE FROM cf_midia WHERE md_token LIKE '%JORNAL_B%'");
+        $query = $db->conn->prepare("DELETE FROM cf_midia WHERE (md_token LIKE '%JORNAL_B%' AND md_tipo != 2)");
         $result = $query->execute();
         return $result;
     }
