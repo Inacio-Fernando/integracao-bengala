@@ -407,6 +407,7 @@ class Bengala extends General
                             array_combine($modeloCartaz, [258, 214, '900/1220', 'BANNER DUPLO']),
                             array_combine($modeloCartaz, [296, 225, '210/297', 'A4 RETRATO SAZONAL']),
                             array_combine($modeloCartaz, [297, 229, '420/594', 'A3 COMBINADO SAZONAL']),
+                            array_combine($modeloCartaz, [293, 227, '148/105', 'A6 PAISAGEM SAZONAL']),
                             array_combine($modeloCartaz, [299, 231, '600/640', 'BANNER 600x640 SAZONAL']),
                             array_combine($modeloCartaz, [301, 232, '900/1220', 'BANNER DUPLO SAZONAL']),
                             array_combine($modeloCartaz, [302, 234, '900/1220', 'BANNER RETRATO 900x1220 SAZONAL']),

@@ -1,4 +1,5 @@
 <?php
+
 use IntegracaoBengala\Bengala;
 use Carbon\Carbon;
 use Cartazfacil\IntegracaoVRSoftware\VRSoftware;
@@ -77,13 +78,11 @@ function iterateProducts($index)
             if (!$general->updateOrSavePrice((array) $general->price)) {
                 throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar preço. Erro: " . json_encode($productData), 1);
             }
-
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
         }
 
         file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Produto Atualizado/Cadastrado. Produto ID:" . $productData->id, FILE_APPEND);
-
     }
 
     //Invocar função em closure
@@ -133,7 +132,7 @@ function iterateOffer($index)
 
             //Variaveis de familia/filial
             $filial = (int) $offerData->idLoja;
-            $tem_familia = (boolean) $offerData->ofertaFamilia;
+            $tem_familia = (bool) $offerData->ofertaFamilia;
             $familia_produto = $offerData->familia;
 
             //Criar/Atualizar familia se existir
@@ -180,7 +179,7 @@ function iterateOffer($index)
             //Atualizar 'prod_desc' com descrição de familia se existir
             if ($tem_familia && $familia_produto) {
                 $general->product->prod_desc = $familia_produto->descricao;
-                unset ($general->product->prod_familia);
+                unset($general->product->prod_familia);
                 if (!$general->getDb()->updateProduct($general->product->prod_id, (object) $general->product)) {
                     throw new Exception("Oferta:" . $offerData->id . ". Não foi possível atualizar produto com prod_desc de família. Erro: " . json_encode($offerData), 1);
                 }
@@ -212,13 +211,11 @@ function iterateOffer($index)
                     throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar item de mídia indoor. Erro: " . json_encode($offerData), 1);
                 }
             }
-
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
         }
 
         file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Oferta/Dailyprint/MídiaIndoor Cadastrada. Oferta ID:" . $offerData->id, FILE_APPEND);
-
     }
 
     //Invocar função em closure
