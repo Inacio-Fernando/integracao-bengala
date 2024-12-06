@@ -362,13 +362,13 @@ class Bengala extends General
                             array_combine($modeloCartaz, [232, 199, '600/640', 'BANNER 600X640']),
                             array_combine($modeloCartaz, [233, 201, '420/594', 'A3 COMBINADO']),
                             array_combine($modeloCartaz, [235, 1, '210/297', 'A4 RETRATO']),
-                            array_combine($modeloCartaz, [276, 214, '900/1220', 'BANNER DUPLO']),
+                            array_combine($modeloCartaz, [276, 214, '900/1220', 'BANNER DUPLO 900x1220']),
 
                             array_combine($modeloCartaz, [294, 228, '148/105', 'A6 PAISAGEM SAZONAL']),
                             array_combine($modeloCartaz, [316, 231, '600/640', 'BANNER 600X640 SAZONAL']),
                             array_combine($modeloCartaz, [298, 230, '420/594', 'A3 COMBINADO SAZONAL']),
                             array_combine($modeloCartaz, [295, 226, '210/297', 'A4 RETRATO SAZONAL']),
-                            array_combine($modeloCartaz, [300, 233, '900/1220', 'BANNER DUPLO SAZONAL']),
+                            array_combine($modeloCartaz, [300, 233, '900/1220', 'BANNER DUPLO SAZONAL 900x1220']),
                         ];
                         break;
                     default:
@@ -396,13 +396,13 @@ class Bengala extends General
                             array_combine($modeloCartaz, [232, 199, '600/640', 'BANNER 600X640']),
                             array_combine($modeloCartaz, [233, 201, '420/594', 'A3 COMBINADO']),
                             array_combine($modeloCartaz, [235, 1, '210/297', 'A4 RETRATO']),
-                            array_combine($modeloCartaz, [276, 214, '900/1220', 'BANNER DUPLO']),
+                            array_combine($modeloCartaz, [276, 214, '900/1220', 'BANNER DUPLO 900x1220']),
 
                             array_combine($modeloCartaz, [294, 228, '148/105', 'A6 PAISAGEM SAZONAL']),
                             array_combine($modeloCartaz, [316, 231, '600/640', 'BANNER 600X640 SAZONAL']),
                             array_combine($modeloCartaz, [298, 230, '420/594', 'A3 COMBINADO SAZONAL']),
                             array_combine($modeloCartaz, [295, 226, '210/297', 'A4 RETRATO SAZONAL']),
-                            array_combine($modeloCartaz, [300, 233, '900/1220', 'BANNER DUPLO SAZONAL']),
+                            array_combine($modeloCartaz, [300, 233, '900/1220', 'BANNER DUPLO SAZONAL 900x1220']),
 
                         ];
                         break;
