@@ -60,7 +60,7 @@ function iterateProducts($index)
             $general->setRequestData($productData);
 
             //Criar ou atualizar produto, em caso de erro registrar
-            if (!$product_id = $general->updateOrSaveProduct()) {
+            if (!$general->updateOrSaveProduct()) {
                 throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar produto. Erro: " . json_encode($productData), 1);
             }
 
@@ -75,7 +75,7 @@ function iterateProducts($index)
             $general->mountPrice();
 
             //Criar ou atualizar produto, em caso de erro registrar
-            if (!$general->updateOrSavePrice((array) $general->price)) {
+            if (!empty((array) $general->price) && !$general->updateOrSavePrice((array) $general->price)) {
                 throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar preço. Erro: " . json_encode($productData), 1);
             }
         } catch (\Throwable $th) {
