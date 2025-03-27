@@ -145,7 +145,7 @@ class Bengala extends General
             $price->vlr_usuario = 1;
             $price->vlr_data_de = $data_de;
             $price->vlr_data_ate = $data_ate;
-            $price->vlr_hora = date_format(date_create(), 'd-m-Y H:i:s');
+            $price->vlr_hora = date_format(date_create(), 'H:i');
 
             //Função para formatação de preço e dinâmica
             $this->priceProduct($price, $p);
