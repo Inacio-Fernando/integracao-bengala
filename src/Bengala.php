@@ -251,19 +251,19 @@ class Bengala extends General
         //Se não houver, adicionar req
         $offerData = $this->request_data;
 
+        $date = new Carbon($offerData->dataInicio);
+
         //Salvar/Atualizar Cartaz
         $dailyprint = new stdClass();
         $dailyprint->dp_produto = (int) $this->product->prod_id;
         $dailyprint->dp_estabelecimento = (int) $offerData->idLoja;
         $dailyprint->dp_nome = (string) "IMPRESSAO_DIARIA_BENGALA";
-        $dailyprint->dp_data = (string) (new Carbon($offerData->dataInicio))->format('Y-m-d');
+        $dailyprint->dp_data = (string) $date->format('Y-m-d');
+        $dailyprint->dp_hora = (string) $date->format('H:m');
 
         //Se preço não existir
         if (empty($this->price))
             return false;
-
-        //Instanciar data da oferta
-        $date = Carbon::createFromFormat('Y-m-d', $offerData->dataInicio);
 
         //Atualização: 29/02/2024
         //Se oferta interna e dinamica = 1, gerar cartazes especificos
