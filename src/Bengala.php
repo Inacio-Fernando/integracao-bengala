@@ -131,7 +131,7 @@ class Bengala extends General
 
         foreach ($productData->produtoAutomacao as $p) {
 
-            if (in_array($p->loja->id, $this->ignoreBranch))
+            if ($p->precoVenda <= 0 || in_array($p->loja->id, $this->ignoreBranch))
                 continue;
 
             //Ver qual data
@@ -145,7 +145,7 @@ class Bengala extends General
             $price->vlr_usuario = 1;
             $price->vlr_data_de = $data_de;
             $price->vlr_data_ate = $data_ate;
-            $price->vlr_hora = '03:03';
+            $price->vlr_hora = date_format(date_create(), 'H:i');
 
             //Função para formatação de preço e dinâmica
             $this->priceProduct($price, $p);
@@ -193,10 +193,10 @@ class Bengala extends General
         $p1 = isset($offerData->precoNormalOferta) ? $this->price_formmater($offerData->precoNormalOferta) : 0;
 
         //Preço Oferta
-        $p2 = isset($offerData->precoOferta) ? $this->price_formmater($offerData->precoOferta) : 0;
+        $p2 = isset($offerData->precoOferta) && $offerData->precoOferta > 0 ? $this->price_formmater($offerData->precoOferta) : 0;
 
         //Preço Connect
-        $p3 = isset($offerData->precoOfertaConnect) ? $this->price_formmater($offerData->precoOfertaConnect) : 0;
+        $p3 = isset($offerData->precoOfertaConnect) && $offerData->precoOfertaConnect > 0 ? $this->price_formmater($offerData->precoOfertaConnect) : 0;
 
         //Se preço Oferta existir, senão preço Normal
         $preco = ($p2 > 0) ? $p2 : $p1;
@@ -241,7 +241,7 @@ class Bengala extends General
         $produtoId = $this->product->prod_id;
         $filial = $this->price->vlr_filial;
 
-        $query = $this->getDb()->conn->prepare("DELETE FROM cf_valor WHERE vlr_data_ate < '$dataAtual' and vlr_produto = $produtoId and vlr_filial = $filial");
+        $query = $this->getDb()->conn->prepare("DELETE FROM cf_valor WHERE vlr_data_ate < '$dataAtual' and vlr_produto = $produtoId and vlr_filial = $filial and vlr_idcomercial != 1");
 
         return $query->execute();
     }
@@ -251,19 +251,19 @@ class Bengala extends General
         //Se não houver, adicionar req
         $offerData = $this->request_data;
 
+        $date = new Carbon($offerData->dataInicio);
+
         //Salvar/Atualizar Cartaz
         $dailyprint = new stdClass();
         $dailyprint->dp_produto = (int) $this->product->prod_id;
         $dailyprint->dp_estabelecimento = (int) $offerData->idLoja;
         $dailyprint->dp_nome = (string) "IMPRESSAO_DIARIA_BENGALA";
-        $dailyprint->dp_data = (string) (new Carbon($offerData->dataInicio))->format('Y-m-d');
+        $dailyprint->dp_data = (string) $date->format('Y-m-d');
+        $dailyprint->dp_hora = (string) $date->format('H:m');
 
         //Se preço não existir
         if (empty($this->price))
             return false;
-
-        //Instanciar data da oferta
-        $date = Carbon::createFromFormat('Y-m-d', $offerData->dataInicio);
 
         //Atualização: 29/02/2024
         //Se oferta interna e dinamica = 1, gerar cartazes especificos
