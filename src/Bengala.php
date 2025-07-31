@@ -273,8 +273,8 @@ class Bengala extends General
         ) {
             $listaCartaz = [
                 [
-                    'dp_dgcartaz' => 149,
-                    'dp_dgmotivo' => 137,
+                    'dp_dgcartaz' => 118,
+                    'dp_dgmotivo' => 113,
                     'dp_tamanho' => '148/105',
                     'dp_fortam' => 'A6 PAISAGEM'
                 ]
