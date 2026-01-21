@@ -5,6 +5,8 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
+var_dump($_ENV);
+
 $capsule = new Capsule;
 
 $capsule->addConnection([
@@ -16,7 +18,7 @@ $capsule->addConnection([
     'charset' => 'utf8',
     'collation' => 'utf8_unicode_ci',
     'prefix' => '',
-], 'mysql');
+]);
 
 // Make this Capsule instance available globally via static methods... (optional)
 $capsule->setAsGlobal();

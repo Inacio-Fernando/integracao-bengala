@@ -1,4 +1,5 @@
 <?php
+
 use IntegracaoBengala\Bengala;
 use Carbon\Carbon;
 use Cartazfacil\IntegracaoVRSoftware\VRSoftware;
@@ -14,7 +15,7 @@ ini_set('memory_limit', '1536M');
 ini_set('max_execution_time', '0');
 ini_set('mysql.connect_timeout', '180');
 ini_set('mysqli.reconnect', '1');
-error_reporting(E_ALL);
+error_reporting(E_ERROR);
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
@@ -39,7 +40,6 @@ function iterateProducts($index)
     $priceInsertList = collect([]);
 
     //Data inicial
-
     $time = $dia->format('d/m/Y H:m');
 
     //Retornar produtos do dia
@@ -113,12 +113,14 @@ function iterateProducts($index)
     }
 
     //Update Produtos
-    !empty($productUpdateList) && ProductTable::batchUpdate($productUpdateList, 'prod_id');
+    if (!empty($productUpdateList)) {
+        ProductTable::batchUpdate($productUpdateList, 'prod_id');
+    }
 
     //Insert Produtos
-    if (!empty($productInsertList) && ProductTable::batchInsert('*', $productInsertList, count($productInsertList))) {
+    if (!empty($productInsertList) && ProductTable::batchInsert('*', $productInsertList, $productInsertList->toArray())) {
 
-        $insertDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $productInsertList)->with('prices')->get();
+        $insertDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $productInsertList->pluck('prod_cod')->flatten())->with('prices')->get();
 
         foreach ($productResponseCollection->whereIn('id', $insertDBList->pluck('prod_cod')->flatten()) as $requestItem) {
 
@@ -132,7 +134,9 @@ function iterateProducts($index)
     }
 
     //Insert Preços
-    !empty($priceInsertList) && ValueTable::batchInsert('*', $priceInsertList->toArray(), count($priceInsertList));
+    if (!empty($priceInsertList)) {
+        ValueTable::batchInsert('*', $priceInsertList->toArray(), count($priceInsertList));
+    }
 
     //Salvar posição em arquivo de status
     file_put_contents('./diary-update.txt', (string) $index);
@@ -146,13 +150,13 @@ function iterateProducts($index)
 }
 
 //Atribuir ponto ao interrompido anteriormente
-//$prod_saved_index = (int) file_get_contents('./diary-update.txt');
-//$prod_start = (empty($prod_saved_index) || !$prod_saved_index || $prod_saved_index <= 0) ? 0 : $prod_saved_index;
+$prod_saved_index = (int) file_get_contents('./diary-update.txt');
+$prod_start = (empty($prod_saved_index) || !$prod_saved_index || $prod_saved_index <= 0) ? 0 : $prod_saved_index;
 
 //Iniciar
 iterateProducts(0);
 
 //Resetar posição para inicio em arquivo de status
-//file_put_contents('./diary-update.txt', (string) 0);
+file_put_contents('./diary-update.txt', (string) 0);
 
 echo "diary-update.php: Execução de script finalizado!";
