@@ -6,7 +6,9 @@
         "cartazfacil/integracao-vrsoftware": "dev-main",
         "cartazfacil/database-integracao": "dev-main",
         "vlucas/phpdotenv": "^4.3",
-        "nesbot/carbon": "1.*"
+        "nesbot/carbon": "1.*",
+        "illuminate/database": "^5.5",
+        "mavinoo/laravel-batch": "^2.4"
     },
     "repositories": [
         {

@@ -2,8 +2,11 @@
 use IntegracaoBengala\Bengala;
 use Carbon\Carbon;
 use Cartazfacil\IntegracaoVRSoftware\VRSoftware;
+use IntegracaoBengala\Models\ProductTable;
+use IntegracaoBengala\Models\ValueTable;
 
-require('./vendor/autoload.php');
+require_once './vendor/autoload.php';
+require_once './src/Models/boot.php';
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -21,18 +24,22 @@ if (!dir('./logs')) {
     mkdir('./logs', 0777, true);
 }
 
-//Cliente API
-$vrsoftware = new VRSoftware();
-
-$GLOBALS['vrsoftware'] = $vrsoftware;
+// Funções gerais
+$GLOBALS['vrsoftware'] = new VRSoftware(); //API
+$GLOBALS['general'] = new Bengala(); //Regras
+$GLOBALS['dia'] = new Carbon();
 
 function iterateProducts($index)
 {
 
-    global $vrsoftware;
+    global $vrsoftware, $general, $dia;
+
+    $productUpdateList = collect([]);
+    $productInsertList = collect([]);
+    $priceInsertList = collect([]);
 
     //Data inicial
-    $dia = new Carbon();
+
     $time = $dia->format('d/m/Y H:m');
 
     //Retornar produtos do dia
@@ -47,65 +54,105 @@ function iterateProducts($index)
     }
 
     //Salvar requisição em arquivo
-    file_put_contents('./dumps/produtos.json', json_encode($response));
+    //file_put_contents('./dumps/produtos.json', json_encode($response));
+
+    $productResponseCollection = collect($response->retorno->conteudo);
+
+    $codCollection = $productResponseCollection->pluck('id')->flatten();
+
+    $productDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $codCollection)->with('prices')->get();
 
     //Iterar sobre items retornados
-    foreach ($response->retorno->conteudo as $key => $dbProduct) {
+    foreach ($productResponseCollection->all() as $requestItem) {
 
         //Converter em objeto
-        $productData = (object) $dbProduct;
+        $productData = (object) $requestItem;
 
         try {
-
-            // Funções gerais
-            $general = new Bengala();
 
             //Atribuir objeto contexto
             $general->setRequestData($productData);
 
-            //Criar ou atualizar produto, em caso de erro registrar
-            if (!$product_id = $general->updateOrSaveProduct()) {
-                throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar produto. Erro: " . json_encode($productData), 1);
-            }
+            $product = $general->mountProduct();
 
             //Criar ou atualizar familia de produto se existir
-            if (!empty((array) $productData->familia)) {
-                if (!$family_id = $general->updateOrSaveFamily()) {
+            if (!empty((array) $productData->familia) && $general->mountFamily()) {
+                if (!$general->updateOrSaveFamily()) {
                     throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($productData), 1);
-                }                
+                }
             }
 
-            //Preparar preços a inserir/atualizar
-            $general->mountPrice();
+            //Verificar produto existente
+            $current = $productDBList->where('prod_cod', $productData->id)->first();
 
-            //Criar ou atualizar produto, em caso de erro registrar
-            if (!$product_id = $general->updateOrSavePrice((array) $general->price)) {
-                throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar preço. Erro: " . json_encode($productData), 1);
+            //Atribuir produto em lista de update ou inserção
+            if (!empty($current)) {
+
+                $general->product->prod_id = $current->prod_id;
+                $productUpdateList->push((array) $general->product);
+
+                $price = $general->mountPrice();
+                $priceInsertList->merge((array) $price);
+
+                continue;
+
             }
+
+            $productInsertList->push((array) $product);
+
 
         } catch (\Throwable $th) {
-            file_put_contents('./logs/diary-update-error.txt', "\n" . Carbon::now() . ' - ' . $th->getMessage(), FILE_APPEND);
+            file_put_contents('./logs/diary-update-error.txt', "\n" . $dia::now() . ' - ' . $th->getMessage(), FILE_APPEND);
         }
 
-        file_put_contents('./logs/diary-update-log.txt', "\n" . Carbon::now() . " - Produto Atualizado/Cadastrado. Produto ID:" . $productData->id, FILE_APPEND);
+        file_put_contents('./logs/diary-update-log.txt', "\n" . $dia::now() . " - Produto Atualizado/Cadastrado. Produto ID:" . $productData->id, FILE_APPEND);
+
+        //Limpar variaveis (memória)
+        unset($productData, $product, $price);
 
     }
+
+    //Update Produtos
+    !empty($productUpdateList) && ProductTable::batchUpdate($productUpdateList, 'prod_id');
+
+    //Insert Produtos
+    if (!empty($productInsertList) && ProductTable::batchInsert('*', $productInsertList, count($productInsertList))) {
+
+        $insertDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $productInsertList)->with('prices')->get();
+
+        foreach ($productResponseCollection->whereIn('id', $insertDBList->pluck('prod_cod')->flatten()) as $requestItem) {
+
+            $general->setRequestData((object) $requestItem);
+            $product = new StdClass();
+            $product->prod_id = $insertDBList->firstWhere('prod_cod', $requestItem['id']);
+            $general->product = $product;
+            $priceInsertList->merge((array) $general->mountPrice());
+
+        }
+    }
+
+    //Insert Preços
+    !empty($priceInsertList) && ValueTable::batchInsert('*', $priceInsertList->toArray(), count($priceInsertList));
 
     //Salvar posição em arquivo de status
     file_put_contents('./diary-update.txt', (string) $index);
 
+    //Limpar variaveis (memória)
+    unset($response, $productResponseCollection, $productDBList, $productInsertList, $productUpdateList, $priceInsertList);
+
     //Invocar função em closure
     iterateProducts($index + 1);
+
 }
 
 //Atribuir ponto ao interrompido anteriormente
-$prod_saved_index = (int) file_get_contents('./diary-update.txt');
-$prod_start = (empty($prod_saved_index) || !$prod_saved_index || $prod_saved_index <= 0) ? 0 : $prod_saved_index;
+//$prod_saved_index = (int) file_get_contents('./diary-update.txt');
+//$prod_start = (empty($prod_saved_index) || !$prod_saved_index || $prod_saved_index <= 0) ? 0 : $prod_saved_index;
 
 //Iniciar
-iterateProducts($prod_start);
+iterateProducts(0);
 
 //Resetar posição para inicio em arquivo de status
-file_put_contents('./diary-update.txt', (string) 0);
+//file_put_contents('./diary-update.txt', (string) 0);
 
 echo "diary-update.php: Execução de script finalizado!";
