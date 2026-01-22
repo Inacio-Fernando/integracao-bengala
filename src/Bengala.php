@@ -176,7 +176,7 @@ class Bengala extends General
         $price->vlr_usuario = 1;
         $price->vlr_data_de = $data_de;
         $price->vlr_data_ate = $data_ate;
-        $price->vlr_hora = '03:03';
+        $price->vlr_hora = date('H:i');
 
         //Função para formatação de preço e dinâmica em objeto 'oferta'
         $this->priceOffer($price, $offerData);

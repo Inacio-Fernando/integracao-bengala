@@ -3,19 +3,11 @@
 use IntegracaoBengala\Bengala;
 use Carbon\Carbon;
 use Cartazfacil\IntegracaoVRSoftware\VRSoftware;
-use IntegracaoBengala\Models\ProductTable;
-use IntegracaoBengala\Models\ValueTable;
+use IntegracaoBengala\Infra\Database\Database;
+use IntegracaoBengala\Infra\Database\Models\ProductTable;
+use IntegracaoBengala\Infra\Database\Models\ValueTable;
 
 require_once './vendor/autoload.php';
-require_once './src/Models/boot.php';
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-ini_set('memory_limit', '1536M');
-ini_set('max_execution_time', '0');
-ini_set('mysql.connect_timeout', '180');
-ini_set('mysqli.reconnect', '1');
-error_reporting(E_ERROR);
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
@@ -24,6 +16,8 @@ $dotenv->safeLoad();
 if (!dir('./logs')) {
     mkdir('./logs', 0777, true);
 }
+
+Database::setupEloquent();
 
 // Funções gerais
 $GLOBALS['vrsoftware'] = new VRSoftware(); //API
@@ -53,14 +47,11 @@ function iterateProducts($index)
         return;
     }
 
-    //Salvar requisição em arquivo
-    //file_put_contents('./dumps/produtos.json', json_encode($response));
-
     $productResponseCollection = collect($response->retorno->conteudo);
 
-    $codCollection = $productResponseCollection->pluck('id')->flatten();
+    $codCollection = $productResponseCollection->unique('id', true)->pluck('id')->flatten();
 
-    $productDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $codCollection)->with('prices')->get();
+    $productDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $codCollection->toArray())->with('prices')->get();
 
     //Iterar sobre items retornados
     foreach ($productResponseCollection->all() as $requestItem) {
@@ -76,10 +67,8 @@ function iterateProducts($index)
             $product = $general->mountProduct();
 
             //Criar ou atualizar familia de produto se existir
-            if (!empty((array) $productData->familia) && $general->mountFamily()) {
-                if (!$general->updateOrSaveFamily()) {
-                    throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($productData), 1);
-                }
+            if (!empty((array) $productData->familia) && $general->mountFamily() && !$general->updateOrSaveFamily()) {
+                throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($productData), 1);
             }
 
             //Verificar produto existente
@@ -88,12 +77,13 @@ function iterateProducts($index)
             //Atribuir produto em lista de update ou inserção
             if (!empty($current)) {
 
+                //produto
                 $general->product->prod_id = $current->prod_id;
                 $productUpdateList->push((array) $general->product);
 
-                $price = $general->mountPrice();
-                $priceInsertList->merge((array) $price);
-
+                //preco
+                $price = collect((array) $general->mountPrice());
+                $priceInsertList->union($price);
                 continue;
 
             }
@@ -105,37 +95,35 @@ function iterateProducts($index)
             file_put_contents('./logs/diary-update-error.txt', "\n" . $dia::now() . ' - ' . $th->getMessage(), FILE_APPEND);
         }
 
-        file_put_contents('./logs/diary-update-log.txt', "\n" . $dia::now() . " - Produto Atualizado/Cadastrado. Produto ID:" . $productData->id, FILE_APPEND);
-
         //Limpar variaveis (memória)
         unset($productData, $product, $price);
 
     }
 
     //Update Produtos
-    if (!empty($productUpdateList)) {
-        ProductTable::batchUpdate($productUpdateList, 'prod_id');
+    if ($productUpdateList->count() > 0) {
+        ProductTable::batchUpdate($productUpdateList->toArray(), 'prod_id');
     }
 
     //Insert Produtos
-    if (!empty($productInsertList) && ProductTable::batchInsert('*', $productInsertList, $productInsertList->toArray())) {
+    if (!empty($productInsertList) && ProductTable::batchInsert(array_keys((array) $general->product), $productInsertList->toArray(), 1000)) {
 
         $insertDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $productInsertList->pluck('prod_cod')->flatten())->with('prices')->get();
 
-        foreach ($productResponseCollection->whereIn('id', $insertDBList->pluck('prod_cod')->flatten()) as $requestItem) {
-
+        foreach ($productResponseCollection->whereIn('id', $insertDBList->pluck('prod_cod')->flatten()->toArray())->all() as $requestItem) {
             $general->setRequestData((object) $requestItem);
             $product = new StdClass();
-            $product->prod_id = $insertDBList->firstWhere('prod_cod', $requestItem['id']);
+            $product->prod_id = $insertDBList->where('prod_cod', $requestItem['id'])->first()->prod_id;
             $general->product = $product;
-            $priceInsertList->merge((array) $general->mountPrice());
-
+            $priceInsertList->union((array) $general->mountPrice());
         }
     }
 
+    var_dump($priceInsertList->count());
+
     //Insert Preços
-    if (!empty($priceInsertList)) {
-        ValueTable::batchInsert('*', $priceInsertList->toArray(), count($priceInsertList));
+    if ($priceInsertList->count() > 0) {
+        ValueTable::batchInsert(array_keys((array) $general->price[0]), $priceInsertList->toArray(), 1000);
     }
 
     //Salvar posição em arquivo de status
@@ -145,7 +133,7 @@ function iterateProducts($index)
     unset($response, $productResponseCollection, $productDBList, $productInsertList, $productUpdateList, $priceInsertList);
 
     //Invocar função em closure
-    iterateProducts($index + 1);
+    //iterateProducts($index + 1);
 
 }
 

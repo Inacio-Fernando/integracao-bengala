@@ -1,0 +1,26 @@
+services:
+  web:
+    build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "subdomain.example.app:10.0.75.1"
+    volumes:
+      - /home/iran/www/integracoes/integracao-bengala:/var/www/html/integracoes/integracao-bengala
+    ports:
+      - 80:80 #localhost
+      - 9000
+  db:
+      image: mysql:8.0   
+      command: --default-authentication-plugin=mysql_native_password
+      restart: always
+      volumes:
+        - /home/iran/www/docker/mysql/db-desenvolvimento.sql:/docker-entrypoint-initdb.d/db-desenvolvimento.sql
+        - /home/iran/www/docker/mysql/db-producao.sql:/docker-entrypoint-initdb.d/db-producao.sql
+      environment:
+        - MYSQL_ROOT_PASSWORD=root
+        - MYSQL_DATABASE=cf_teste
+      ports:
+        - "3306:3306"
+networks:
+  cartazfacil-localhost:
+    driver: bridge

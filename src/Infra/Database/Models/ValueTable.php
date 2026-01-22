@@ -1,6 +1,6 @@
 <?php
 
-namespace IntegracaoBengala\Models;
+namespace IntegracaoBengala\Infra\Database\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Mavinoo\Batch\BatchFacade;
@@ -54,7 +54,7 @@ class ValueTable extends Model
 	public static function batchInsert($columns, $data, $batchSize)
 	{
 		try {
-			return BatchFacade::insert(new TabelaValor, $columns, $data, $batchSize);
+			return BatchFacade::insert(new ValueTable, $columns, $data, $batchSize);
 		} catch (Throwable $e) {
 			return false;
 		}
@@ -63,7 +63,7 @@ class ValueTable extends Model
 	public static function batchUpdate($data, $primaryKey)
 	{
 		try {
-			return BatchFacade::update(new TabelaValor, $data, $primaryKey);
+			return BatchFacade::update(new ValueTable, $data, $primaryKey);
 		} catch (Throwable $e) {
 			return false;
 		}

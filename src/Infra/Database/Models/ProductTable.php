@@ -1,8 +1,9 @@
 <?php
 
-namespace IntegracaoBengala\Models;
+namespace IntegracaoBengala\Infra\Database\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use IntegracaoBengala\Infra\Database\Database;
 use Mavinoo\Batch\BatchFacade;
 use Throwable;
 
@@ -71,7 +72,7 @@ class ProductTable extends Model
     public static function batchInsert($columns, $data, $batchSize)
     {
         try {
-            return BatchFacade::insert(new ProductTable, $columns, $data, $batchSize);
+            return Database::getBatch()->insert($columns, $columns, $data, $batchSize);
         } catch (Throwable $e) {
             return false;
         }
@@ -80,7 +81,7 @@ class ProductTable extends Model
     public static function batchUpdate($data, $primaryKey)
     {
         try {
-            return BatchFacade::update(new ProductTable, $data, $primaryKey);
+            return Database::getBatch()->update(new ProductTable, $data, $primaryKey);
         } catch (Throwable $e) {
             return false;
         }
@@ -90,7 +91,7 @@ class ProductTable extends Model
 
     public function prices()
     {
-        return $this->hasMany(TabelaValor::class, 'vlr_produto');
+        return $this->hasMany(ValueTable::class, 'vlr_produto');
     }
 }
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace IntegracaoBengala\Models;
+namespace IntegracaoBengala\Infra\Database\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Mavinoo\Batch\BatchFacade;
