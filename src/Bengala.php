@@ -117,7 +117,7 @@ class Bengala extends General
         return $this->family = $family;
     }
 
-    function mountPrice($productData = null)
+    function mountPrice($productData = null, $asArray = true)
     {
         if (is_null($productData)) {
             $productData = $this->request_data;
@@ -149,10 +149,10 @@ class Bengala extends General
 
             //Função para formatação de preço e dinâmica
             $this->priceProduct($price, $p);
-            $this->price[] = $price;
+            $this->price[] = ($asArray) ? (array) $price : (object) $price;
         }
 
-        return (object) $this->price;
+        return $this->price;
     }
 
     function mountPriceOffer($offerData = null)
@@ -176,7 +176,7 @@ class Bengala extends General
         $price->vlr_usuario = 1;
         $price->vlr_data_de = $data_de;
         $price->vlr_data_ate = $data_ate;
-        $price->vlr_hora = '03:03';
+        $price->vlr_hora = date('H:i');
 
         //Função para formatação de preço e dinâmica em objeto 'oferta'
         $this->priceOffer($price, $offerData);
