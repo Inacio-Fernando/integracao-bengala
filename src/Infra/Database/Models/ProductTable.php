@@ -69,10 +69,10 @@ class ProductTable extends Model
         'prod_desc_alt'
     ];
 
-    public static function batchInsert($columns, $data, $batchSize)
+    public static function batchInsert(array $columns, $data, $batchSize)
     {
         try {
-            return Database::getBatch()->insert($columns, $columns, $data, $batchSize);
+            return Database::getBatch()->insert(new ProductTable(), $columns, $data, $batchSize);
         } catch (Throwable $e) {
             return false;
         }

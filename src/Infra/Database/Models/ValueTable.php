@@ -3,6 +3,7 @@
 namespace IntegracaoBengala\Infra\Database\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use IntegracaoBengala\Infra\Database\Database;
 use Mavinoo\Batch\BatchFacade;
 use Throwable;
 
@@ -21,6 +22,8 @@ use Throwable;
 class ValueTable extends Model
 {
 
+	protected $connection = 'mysql';
+	
 	/**
 	 * The table associated with the model.
 	 * 
@@ -51,10 +54,10 @@ class ValueTable extends Model
 		'vlr_hora'
 	];
 
-	public static function batchInsert($columns, $data, $batchSize)
+	public static function batchInsert(array $columns, $data, $batchSize)
 	{
 		try {
-			return BatchFacade::insert(new ValueTable, $columns, $data, $batchSize);
+			return Database::getBatch()->insert(new ValueTable, $columns, $data, $batchSize);
 		} catch (Throwable $e) {
 			return false;
 		}
@@ -63,7 +66,7 @@ class ValueTable extends Model
 	public static function batchUpdate($data, $primaryKey)
 	{
 		try {
-			return BatchFacade::update(new ValueTable, $data, $primaryKey);
+			return Database::getBatch()->update(new ValueTable, $data, $primaryKey);
 		} catch (Throwable $e) {
 			return false;
 		}

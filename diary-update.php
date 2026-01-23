@@ -9,6 +9,14 @@ use IntegracaoBengala\Infra\Database\Models\ValueTable;
 
 require_once './vendor/autoload.php';
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+ini_set('memory_limit', '1536M');
+ini_set('max_execution_time', '0');
+ini_set('mysql.connect_timeout', '180');
+ini_set('mysqli.reconnect', '1');
+error_reporting(E_ALL);
+
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
@@ -31,7 +39,8 @@ function iterateProducts($index)
 
     $productUpdateList = collect([]);
     $productInsertList = collect([]);
-    $priceInsertList = collect([]);
+    $priceUpdateList = [];
+    $priceInsertList = [];
 
     //Data inicial
     $time = $dia->format('d/m/Y H:m');
@@ -71,25 +80,37 @@ function iterateProducts($index)
                 throw new Exception("Produto:" . $productData->id . ". Não foi possível salvar familia de produto. Erro: " . json_encode($productData), 1);
             }
 
-            //Verificar produto existente
-            $current = $productDBList->where('prod_cod', $productData->id)->first();
-
-            //Atribuir produto em lista de update ou inserção
-            if (!empty($current)) {
+            //Verificar produto existente e atribuir produto em lista de update ou inserção
+            if (!empty($productDBList) && !empty($current = $productDBList->where('prod_cod', $productData->id)->first())) {
 
                 //produto
                 $general->product->prod_id = $current->prod_id;
                 $productUpdateList->push((array) $general->product);
 
-                //preco
-                $price = collect((array) $general->mountPrice());
-                $priceInsertList->union($price);
-                continue;
+                //precos
+                $prices = collect((array) $general->mountPrice());
 
+                if ($current->prices->count() > 0) {
+                    $current->prices->map(function ($value) use (&$prices, &$priceInsertList, &$priceUpdateList) {
+                        $pIndex = $prices->search(function ($item) use ($value) {
+                            return $item['vlr_produto'] == $value->vlr_produto && $item['vlr_filial'] == $value->vlr_filial && $item['vlr_idcomercial'] == $value->vlr_idcomercial;
+                        });
+
+                        if ($pIndex) {
+                            $p = $prices[$pIndex];
+                            $p['vlr_id'] = $value->vlr_id;
+                            $priceUpdateList[] = (array) $p;
+                            unset($prices[$pIndex]);
+                        }
+
+                    });
+                } else {
+                    $priceInsertList = array_merge($prices->toArray(), $priceInsertList);
+                }
+
+            } else {
+                $productInsertList->push((array) $product);
             }
-
-            $productInsertList->push((array) $product);
-
 
         } catch (\Throwable $th) {
             file_put_contents('./logs/diary-update-error.txt', "\n" . $dia::now() . ' - ' . $th->getMessage(), FILE_APPEND);
@@ -106,24 +127,41 @@ function iterateProducts($index)
     }
 
     //Insert Produtos
-    if (!empty($productInsertList) && ProductTable::batchInsert(array_keys((array) $general->product), $productInsertList->toArray(), 1000)) {
+    if ($productInsertList->count() > 0 && ProductTable::insert($productInsertList->toArray())) {
 
-        $insertDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $productInsertList->pluck('prod_cod')->flatten())->with('prices')->get();
+        $productDBList = ProductTable::select(['prod_id', 'prod_cod'])->whereIn('prod_cod', $productInsertList->pluck('prod_cod')->flatten())->with('prices')->get();
 
-        foreach ($productResponseCollection->whereIn('id', $insertDBList->pluck('prod_cod')->flatten()->toArray())->all() as $requestItem) {
-            $general->setRequestData((object) $requestItem);
-            $product = new StdClass();
-            $product->prod_id = $insertDBList->where('prod_cod', $requestItem['id'])->first()->prod_id;
-            $general->product = $product;
-            $priceInsertList->union((array) $general->mountPrice());
+        $filteredRequest = $productResponseCollection->whereIn('id', $productDBList->pluck('prod_cod')->flatten()->toArray());
+
+        foreach ($productDBList as $product) {
+
+            //Filtrar items de request
+            $requestItems = $filteredRequest->where('id', $product->prod_cod)->all();
+
+            //Atribuir valores ao array de insert de preços
+            foreach ($requestItems as $requestItem) {
+                $general->setRequestData((object) $requestItem);
+                $general->mountProduct();
+                $general->product->prod_id = $product->prod_id;
+                $priceInsertList = array_merge((array) $general->mountPrice(), $priceInsertList);
+            }
         }
     }
 
-    var_dump($priceInsertList->count());
+    //Update Preços
+    if (count($priceUpdateList) > 0) {
+        ValueTable::batchUpdate($priceUpdateList, 'vlr_id');
+    }
 
     //Insert Preços
-    if ($priceInsertList->count() > 0) {
-        ValueTable::batchInsert(array_keys((array) $general->price[0]), $priceInsertList->toArray(), 1000);
+    if (count($priceInsertList) > 0) {
+        try {
+            foreach (array_chunk($priceInsertList, 1000) as $chunkPrice) {
+                ValueTable::insert($chunkPrice);
+            }
+        } catch (\Throwable $th) {
+            throw new Exception("Não foi possível salvar chunk preços. Erro: " . json_encode($th->getMessage(), $chunkPrice), 1);
+        }
     }
 
     //Salvar posição em arquivo de status
@@ -133,7 +171,7 @@ function iterateProducts($index)
     unset($response, $productResponseCollection, $productDBList, $productInsertList, $productUpdateList, $priceInsertList);
 
     //Invocar função em closure
-    //iterateProducts($index + 1);
+    iterateProducts($index + 1);
 
 }
 
@@ -142,7 +180,7 @@ $prod_saved_index = (int) file_get_contents('./diary-update.txt');
 $prod_start = (empty($prod_saved_index) || !$prod_saved_index || $prod_saved_index <= 0) ? 0 : $prod_saved_index;
 
 //Iniciar
-iterateProducts(0);
+iterateProducts($prod_start);
 
 //Resetar posição para inicio em arquivo de status
 file_put_contents('./diary-update.txt', (string) 0);

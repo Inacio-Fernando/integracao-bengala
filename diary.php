@@ -72,7 +72,7 @@ function iterateProducts($index)
             }
 
             //Preparar preços a inserir/atualizar
-            $general->mountPrice();
+            $general->mountPrice(null, false);
 
             //Criar ou atualizar produto, em caso de erro registrar
             if (!empty((array) $general->price) && !$general->updateOrSavePrice((array) $general->price)) {

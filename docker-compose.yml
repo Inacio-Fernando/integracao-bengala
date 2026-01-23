@@ -1,0 +1,26 @@
+services:
+  web:
+    build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "subdomain.example.app:10.0.75.1"
+    volumes:
+      - ./:/var/www/html
+    ports:
+      - 8080:80
+    container_name: bengala_web
+  db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    volumes:
+      - ./docker/cf_teste.sql:/docker-entrypoint-initdb.d/cf_teste.sql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=cf_teste
+    ports:
+      - "3306:3306"
+    container_name: bengala_db
+networks:
+  cartazfacil-localhost:
+    driver: bridge
