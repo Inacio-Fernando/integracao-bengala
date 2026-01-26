@@ -155,6 +155,13 @@ function iterateProducts($index)
 
     //Insert Preços
     if (count($priceInsertList) > 0) {
+
+        //Código de produtos
+        $prod_cods = collect($priceInsertList)->pluck('vlr_produto')->flatten()->toArray();
+
+        //Limpeza de preços antes de insert
+        count($prod_cods) > 0 && ValueTable::whereIn('vlr_produto', $prod_cods)->delete();
+
         try {
             foreach (array_chunk($priceInsertList, 1000) as $chunkPrice) {
                 ValueTable::insert($chunkPrice);
