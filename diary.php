@@ -92,8 +92,7 @@ function iterateProducts($index)
 function iterateOffer($index)
 {
 
-    global $vrsoftware;
-    global $family;
+    global $vrsoftware, $family, $general;
 
     //Data inicial
     $dia = new Carbon();
@@ -119,9 +118,6 @@ function iterateOffer($index)
         $offerData = (object) $offerItem;
 
         try {
-
-            //Funções gerais
-            $general = new Bengala();
 
             //Filiais a ignorar interação
             if (in_array($offerData->idLoja, $general->ignoreBranch))
@@ -192,7 +188,7 @@ function iterateOffer($index)
             $general->clearProductPrices();
 
             //Salvar preço
-            if (!$general->getDb()->insertPrice($general->price)) {
+            if (!$general->updateOrSavePrice([$general->price])) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar preço. Erro: " . json_encode($offerData), 1);
             }
 
@@ -216,6 +212,8 @@ function iterateOffer($index)
         }
 
         file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Oferta/Dailyprint/MídiaIndoor Cadastrada. Oferta ID:" . $offerData->id, FILE_APPEND);
+
+        unset($filial, $tem_familia, $familia_produto, $offerData, $temp, $productData, $produtoResponse);
     }
 
     //Invocar função em closure
@@ -225,6 +223,7 @@ function iterateOffer($index)
 //Inicializar vars globais
 $GLOBALS['family'] = array(0);
 $GLOBALS['vrsoftware'] = $vrsoftware;
+$GLOBALS['general'] = new Bengala();
 
 //Retorna ultimo id de midia cadastrada
 $lastMedia = (int) Bengala::getLastMediaIndoorId();

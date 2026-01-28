@@ -241,7 +241,7 @@ class Bengala extends General
         $produtoId = $this->product->prod_id;
         $filial = $this->price->vlr_filial;
 
-        $query = $this->getDb()->conn->prepare("DELETE FROM cf_valor WHERE vlr_data_ate < '$dataAtual' and vlr_produto = $produtoId and vlr_filial = $filial and vlr_idcomercial != 1");
+        $query = $this->getDb()->conn->prepare("DELETE FROM cf_valor WHERE vlr_data_ate < '$dataAtual' and vlr_produto = $produtoId and vlr_filial = $filial");
 
         return $query->execute();
     }
