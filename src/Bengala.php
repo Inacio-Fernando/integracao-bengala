@@ -562,12 +562,20 @@ class Bengala extends General
         return (in_array($text, ['PC', 'FD', 'CX'])) ? 'UN' : $text;
     }
 
-    static function clearMediaIndoor($truncate = false)
+
+    static function clearMediaIndoor($truncate = false, int $before = 0)
     {
+
+        $queryString = "DELETE FROM cf_midia WHERE (md_token LIKE '%JORNAL_B%' AND md_tipo != 2)";
+
+        if ($before > 0) {
+            $queryString .= " AND md_id <= $before";
+        }
+
         $db = (new self)->getDb();
 
         //Limpar apenas lista de items tabela cf_midia baseado em data
-        $query = $db->conn->prepare("DELETE FROM cf_midia WHERE (md_token LIKE '%JORNAL_B%' AND md_tipo != 2)");
+        $query = $db->conn->prepare($queryString);
         $result = $query->execute();
         return $result;
     }
@@ -576,5 +584,10 @@ class Bengala extends General
     {
         //Limpar apenas lista de items tabela cf_dailyprint baseado nos parametros
         return (new self)->getDb()->deleteFrom('cf_dailyprint', 'dp_usuario', '1');
+    }
+
+    static function getLastMediaIndoorId()
+    {
+        return (new self)->getDb()->getLastId('md_id', 'cf_midia');
     }
 }

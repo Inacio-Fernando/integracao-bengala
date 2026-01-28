@@ -226,12 +226,15 @@ function iterateOffer($index)
 $GLOBALS['family'] = array(0);
 $GLOBALS['vrsoftware'] = $vrsoftware;
 
+//Retorna ultimo id de midia cadastrada
+$lastMedia = (int) Bengala::getLastMediaIndoorId();
+
 //Salvar produtos
 iterateProducts(0);
 
 //Salvar Ofertas
 Bengala::clearDailyPrint(); //Limpar impressões
-Bengala::clearMediaIndoor(); //Limpar midia indoor
 iterateOffer(0); //Salvar ofertas/dailyprint/midia
+Bengala::clearMediaIndoor(false, $lastMedia); //Limpar midia indoor
 
 echo "diary.php: Execução de script finalizado!";
