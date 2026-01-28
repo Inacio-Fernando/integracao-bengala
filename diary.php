@@ -188,7 +188,7 @@ function iterateOffer($index)
             $general->clearProductPrices();
 
             //Salvar preço
-            if (!$general->updateOrSavePrice([$general->price])) {
+            if (!$general->getDb()->insertPrice($general->price)) {
                 throw new Exception("Oferta:" . $offerData->id . ". Não foi possível salvar preço. Erro: " . json_encode($offerData), 1);
             }
 
@@ -213,7 +213,7 @@ function iterateOffer($index)
 
         file_put_contents('./logs/diary-log.txt', "\n" . Carbon::now() . " - Oferta/Dailyprint/MídiaIndoor Cadastrada. Oferta ID:" . $offerData->id, FILE_APPEND);
 
-        unset($filial, $tem_familia, $familia_produto, $offerData, $temp, $productData, $produtoResponse);
+        //unset($filial, $tem_familia, $familia_produto, $offerData, $temp, $productData, $produtoResponse);
     }
 
     //Invocar função em closure
